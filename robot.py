@@ -1,16 +1,25 @@
-# TODO: insert robot code here
+# You must either:
+#   1) Hardlink swervepy into the example_robot directory OR
+#   2) Move the example code to a different project and copy swervepy into that project
 
-import wpilib
-import rev
+from typing import Optional
 
-testMotorID = 21
+import commands2
 
-class MyRobot(wpilib.TimedRobot):
-    def robotInit(self) -> None:
-        self.gamePad = wpilib.XboxController(0)
+from container import RobotContainer
 
-        self.testMotor = rev.CANSparkMax(testMotorID, rev.CANSparkLowLevel.MotorType.kBrushless)
-        self.testMotor.setIdleMode(rev.CANSparkMax.IdleMode.kCoast)
 
-    def teleopPeriodic(self) -> None:
-        self.testMotor.set(self.gamePad.getLeftY)
+class Robot(commands2.TimedCommandRobot):
+    def robotInit(self):
+        self.container = RobotContainer()
+        self.scheduler = commands2.CommandScheduler.getInstance()
+        self.autonomous_command: Optional[commands2.Command] = None
+
+    def autonomousInit(self) -> None:
+        self.autonomous_command = self.container.get_autonomous_command()
+        if self.autonomous_command:
+            self.autonomous_command.schedule()
+
+    def teleopInit(self) -> None:
+        if self.autonomous_command:
+            self.autonomous_command.cancel()
