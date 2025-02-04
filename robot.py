@@ -1,12 +1,14 @@
 # TODO: insert robot code here
 from wpimath.geometry import Translation2d
 import wpilib
+import math
 import rev
 import wpimath
 import wpimath.geometry
 from wpimath.kinematics import SwerveDrive4Kinematics, ChassisSpeeds, SwerveModuleState
 import ntcore
 import wpimath.units
+import constants
 
 wheelDistanceFromCenter = wpimath.units.inchesToMeters(12.375)
 frontLeftLocation = Translation2d(wheelDistanceFromCenter, wheelDistanceFromCenter)
@@ -18,6 +20,16 @@ kinematics = SwerveDrive4Kinematics(frontLeftLocation,frontRightLocation,backLef
 nt= ntcore.NetworkTableInstance.getDefault()
 desiredSwerveStatesTopic=nt.getStructArrayTopic("/DesiredSwerveStates", SwerveModuleState).publish()
 actualSwerveStatesTopic=nt.getStructArrayTopic("/ActualSwerveStates", SwerveModuleState).publish()
+
+driveMotorConfig = rev.SparkMaxConfig()
+driveMotorConfig.encoder.velocityConversionFactor(
+    (math.pi *constants.kWheelDiameter / constants.kDriveMotorReduction) / 60.0
+).positionConversionFactor(
+    math.pi * constants.kWheelDiameter / constants.kDriveMotorReduction 
+)
+
+steerMotorConfig = rev.SparkMaxConfig()
+steerMotorConfig.absoluteEncoder.positionConversionFactor(2 * math.pi).inverted(True)
 
 class MyRobot(wpilib.TimedRobot):
     leftStick = wpilib.Joystick(0)
@@ -33,6 +45,16 @@ class MyRobot(wpilib.TimedRobot):
     backRightDriveMotor = rev.SparkMax(27, rev.SparkLowLevel.MotorType.kBrushless)
     backRightSteerMotor = rev.SparkMax(23, rev.SparkLowLevel.MotorType.kBrushless)
 
+    frontLeftDriveMotor.configure(driveMotorConfig, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
+    frontRightDriveMotor.configure(driveMotorConfig, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
+    backLeftDriveMotor.configure(driveMotorConfig, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
+    backRightDriveMotor.configure(driveMotorConfig, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
+
+    frontLeftSteerMotor.configure(steerMotorConfig, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
+    frontRightSteerMotor.configure(steerMotorConfig, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
+    backLeftSteerMotor.configure(steerMotorConfig, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
+    backRightSteerMotor.configure(steerMotorConfig, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
+
     frontLeftDriveEncoder = frontLeftDriveMotor.getEncoder()
     frontLeftSteerEncoder = frontLeftSteerMotor.getAbsoluteEncoder()
     frontRightDriveEncoder = frontRightDriveMotor.getEncoder()
@@ -41,6 +63,8 @@ class MyRobot(wpilib.TimedRobot):
     backLeftSteerEncoder = backLeftSteerMotor.getAbsoluteEncoder()
     backRightDriveEncoder = backRightDriveMotor.getEncoder()
     backRightSteerEncoder = backRightSteerMotor.getAbsoluteEncoder()
+
+    
 
     # TODO: Rev seems to have removed this method in 2025.
     # frontLeftSteerEncoder.setInverted(True)
