@@ -30,6 +30,12 @@ driveMotorConfig.encoder.velocityConversionFactor(
 
 steerMotorConfig = rev.SparkMaxConfig()
 steerMotorConfig.absoluteEncoder.positionConversionFactor(2 * math.pi).inverted(True)
+steerMotorConfig.closedLoop.setFeedbackSensor(
+    rev.ClosedLoopConfig.FeedbackSensor.kAbsoluteEncoder
+).pid(
+    1, 0.0, 0.0
+).positionWrappingEnabled(True).positionWrappingInputRange(-math.pi,math.pi)
+
 
 class MyRobot(wpilib.TimedRobot):
     leftStick = wpilib.Joystick(0)
@@ -63,8 +69,11 @@ class MyRobot(wpilib.TimedRobot):
     backLeftSteerEncoder = backLeftSteerMotor.getAbsoluteEncoder()
     backRightDriveEncoder = backRightDriveMotor.getEncoder()
     backRightSteerEncoder = backRightSteerMotor.getAbsoluteEncoder()
-
     
+    frontLeftSteerPidController= frontLeftSteerMotor.getClosedLoopController()
+    frontRightSteerPidController= frontRightSteerMotor.getClosedLoopController()
+    backLeftSteerPidController= backLeftSteerMotor.getClosedLoopController()
+    backRightSteerPidController= backRightSteerMotor.getClosedLoopController()
 
     # TODO: Rev seems to have removed this method in 2025.
     # frontLeftSteerEncoder.setInverted(True)
@@ -99,5 +108,9 @@ class MyRobot(wpilib.TimedRobot):
         speeds= ChassisSpeeds(-self.leftStick.getY(), -self.leftStick.getX(), -self.rightStick.getX())
         frontLeft, frontRight,backLeft,backRight= kinematics.toSwerveModuleStates(speeds)
         desiredSwerveStatesTopic.set([frontLeft,frontRight,backLeft,backRight])
+        self.frontRightSteerPidController.setReference(frontRight.angle.radians(),rev.SparkLowLevel.ControlType.kPosition)
+        self.frontLeftSteerPidController.setReference(frontLeft.angle.radians()+(3*math.pi/2),rev.SparkLowLevel.ControlType.kPosition)
+        self.backLeftSteerPidController.setReference(backLeft.angle.radians()+(math.pi),rev.SparkLowLevel.ControlType.kPosition)
+        self.backRightSteerPidController.setReference(backRight.angle.radians()+(math.pi/2),rev.SparkLowLevel.ControlType.kPosition)
         pass
 
