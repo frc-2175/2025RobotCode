@@ -22,11 +22,13 @@ desiredSwerveStatesTopic=nt.getStructArrayTopic("/DesiredSwerveStates", SwerveMo
 actualSwerveStatesTopic=nt.getStructArrayTopic("/ActualSwerveStates", SwerveModuleState).publish()
 
 driveMotorConfig = rev.SparkMaxConfig()
+driveMotorConfig.smartCurrentLimit(40)
 driveMotorConfig.encoder.velocityConversionFactor(
     (math.pi *constants.kWheelDiameter / constants.kDriveMotorReduction) / 60.0
 ).positionConversionFactor(
     math.pi * constants.kWheelDiameter / constants.kDriveMotorReduction 
 )
+driveMotorConfig.closedLoop.setFeedbackSensor(rev.ClosedLoopConfig.FeedbackSensor.kPrimaryEncoder).pidf(0.1,0,0,1 / constants.kMaxSpeed)
 
 steerMotorConfig = rev.SparkMaxConfig()
 steerMotorConfig.absoluteEncoder.positionConversionFactor(2 * math.pi).inverted(True)
@@ -69,6 +71,13 @@ class MyRobot(wpilib.TimedRobot):
     backLeftSteerEncoder = backLeftSteerMotor.getAbsoluteEncoder()
     backRightDriveEncoder = backRightDriveMotor.getEncoder()
     backRightSteerEncoder = backRightSteerMotor.getAbsoluteEncoder()
+
+    frontLeftDrivePidController= frontLeftDriveMotor.getClosedLoopController()
+    frontRightDrivePidController= frontRightDriveMotor.getClosedLoopController()
+    backLeftDrivePidController= backLeftDriveMotor.getClosedLoopController()
+    backRightDrivePidController= backRightDriveMotor.getClosedLoopController()   
+    
+
     
     frontLeftSteerPidController= frontLeftSteerMotor.getClosedLoopController()
     frontRightSteerPidController= frontRightSteerMotor.getClosedLoopController()
@@ -111,6 +120,10 @@ class MyRobot(wpilib.TimedRobot):
         speeds= ChassisSpeeds(xSpeed, ySpeed, turnSpeed)
         frontLeft, frontRight,backLeft,backRight= kinematics.toSwerveModuleStates(speeds)
         desiredSwerveStatesTopic.set([frontLeft,frontRight,backLeft,backRight])
+        self.frontLeftDrivePidController.setReference(frontLeft.speed,rev.SparkLowLevel.ControlType.kVelocity)
+        self.frontRightDrivePidController.setReference(frontRight.speed,rev.SparkLowLevel.ControlType.kVelocity)
+        self.backLeftDrivePidController.setReference(backLeft.speed,rev.SparkLowLevel.ControlType.kVelocity)
+        self.backRightDrivePidController.setReference(backRight.speed,rev.SparkLowLevel.ControlType.kVelocity)
         self.frontRightSteerPidController.setReference(frontRight.angle.radians(),rev.SparkLowLevel.ControlType.kPosition)
         self.frontLeftSteerPidController.setReference(frontLeft.angle.radians()+(3*math.pi/2),rev.SparkLowLevel.ControlType.kPosition)
         self.backLeftSteerPidController.setReference(backLeft.angle.radians()+(math.pi),rev.SparkLowLevel.ControlType.kPosition)
