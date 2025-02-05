@@ -105,7 +105,10 @@ class MyRobot(wpilib.TimedRobot):
 
 
     def teleopPeriodic(self) -> None:
-        speeds= ChassisSpeeds(-self.leftStick.getY(), -self.leftStick.getX(), -self.rightStick.getX())
+        xSpeed = wpimath.applyDeadband(-self.leftStick.getY(), 0.2)
+        ySpeed = wpimath.applyDeadband(-self.leftStick.getX(), 0.2)
+        turnSpeed = wpimath.applyDeadband(-self.rightStick.getX(), 0.2)
+        speeds= ChassisSpeeds(xSpeed, ySpeed, turnSpeed)
         frontLeft, frontRight,backLeft,backRight= kinematics.toSwerveModuleStates(speeds)
         desiredSwerveStatesTopic.set([frontLeft,frontRight,backLeft,backRight])
         self.frontRightSteerPidController.setReference(frontRight.angle.radians(),rev.SparkLowLevel.ControlType.kPosition)
