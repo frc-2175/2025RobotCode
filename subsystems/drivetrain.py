@@ -5,6 +5,7 @@ import wpimath
 from wpimath.geometry import Translation2d
 from wpimath.kinematics import SwerveDrive4Kinematics, ChassisSpeeds, SwerveModuleState
 import ntcore
+from swervemodule import SwerveModule
 
 wheelDistanceFromCenter = wpimath.units.inchesToMeters(12.375)
 frontLeftLocation = Translation2d(wheelDistanceFromCenter, wheelDistanceFromCenter)
@@ -17,90 +18,25 @@ nt= ntcore.NetworkTableInstance.getDefault()
 desiredSwerveStatesTopic=nt.getStructArrayTopic("/DesiredSwerveStates", SwerveModuleState).publish()
 actualSwerveStatesTopic=nt.getStructArrayTopic("/ActualSwerveStates", SwerveModuleState).publish()
 
-driveMotorConfig = rev.SparkMaxConfig()
-driveMotorConfig.smartCurrentLimit(40)
-driveMotorConfig.encoder.velocityConversionFactor(
-    (math.pi *constants.kWheelDiameter / constants.kDriveMotorReduction) / 60.0
-).positionConversionFactor(
-    math.pi * constants.kWheelDiameter / constants.kDriveMotorReduction 
-)
-driveMotorConfig.closedLoop.setFeedbackSensor(rev.ClosedLoopConfig.FeedbackSensor.kPrimaryEncoder).pidf(0.1,0,0,1 / constants.kMaxSpeed)
-
-steerMotorConfig = rev.SparkMaxConfig()
-steerMotorConfig.absoluteEncoder.positionConversionFactor(2 * math.pi).inverted(True)
-steerMotorConfig.closedLoop.setFeedbackSensor(
-    rev.ClosedLoopConfig.FeedbackSensor.kAbsoluteEncoder
-).pid(
-    1, 0.0, 0.0
-).positionWrappingEnabled(True).positionWrappingInputRange(-math.pi,math.pi)
-
 class Drivetrain:
-    frontLeftDriveMotor = rev.SparkMax(25, rev.SparkLowLevel.MotorType.kBrushless)
-    frontLeftSteerMotor = rev.SparkMax(21, rev.SparkLowLevel.MotorType.kBrushless)
-    frontRightDriveMotor = rev.SparkMax(28, rev.SparkLowLevel.MotorType.kBrushless)
-    frontRightSteerMotor = rev.SparkMax(22, rev.SparkLowLevel.MotorType.kBrushless)
-    backLeftDriveMotor = rev.SparkMax(26, rev.SparkLowLevel.MotorType.kBrushless)
-    backLeftSteerMotor = rev.SparkMax(24, rev.SparkLowLevel.MotorType.kBrushless)
-    backRightDriveMotor = rev.SparkMax(27, rev.SparkLowLevel.MotorType.kBrushless)
-    backRightSteerMotor = rev.SparkMax(23, rev.SparkLowLevel.MotorType.kBrushless)
-
-    frontLeftDriveMotor.configure(driveMotorConfig, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
-    frontRightDriveMotor.configure(driveMotorConfig, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
-    backLeftDriveMotor.configure(driveMotorConfig, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
-    backRightDriveMotor.configure(driveMotorConfig, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
-
-    frontLeftSteerMotor.configure(steerMotorConfig, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
-    frontRightSteerMotor.configure(steerMotorConfig, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
-    backLeftSteerMotor.configure(steerMotorConfig, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
-    backRightSteerMotor.configure(steerMotorConfig, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
-
-    frontLeftDriveEncoder = frontLeftDriveMotor.getEncoder()
-    frontLeftSteerEncoder = frontLeftSteerMotor.getAbsoluteEncoder()
-    frontRightDriveEncoder = frontRightDriveMotor.getEncoder()
-    frontRightSteerEncoder = frontRightSteerMotor.getAbsoluteEncoder()
-    backLeftDriveEncoder = backLeftDriveMotor.getEncoder()
-    backLeftSteerEncoder = backLeftSteerMotor.getAbsoluteEncoder()
-    backRightDriveEncoder = backRightDriveMotor.getEncoder()
-    backRightSteerEncoder = backRightSteerMotor.getAbsoluteEncoder()
-
-    frontLeftDrivePidController= frontLeftDriveMotor.getClosedLoopController()
-    frontRightDrivePidController= frontRightDriveMotor.getClosedLoopController()
-    backLeftDrivePidController= backLeftDriveMotor.getClosedLoopController()
-    backRightDrivePidController= backRightDriveMotor.getClosedLoopController()
-
-    frontLeftSteerPidController= frontLeftSteerMotor.getClosedLoopController()
-    frontRightSteerPidController= frontRightSteerMotor.getClosedLoopController()
-    backLeftSteerPidController= backLeftSteerMotor.getClosedLoopController()
-    backRightSteerPidController= backRightSteerMotor.getClosedLoopController()
+    frontLeftSwerveModule = SwerveModule(25, 21, 3*math.pi/2)
+    frontRightSwerveModule = SwerveModule(28, 22, 0)
+    backLeftSwerveModule = SwerveModule(26, 24, math.pi)
+    backRightSwerveModule = SwerveModule(27, 23, math.pi/2)
 
     def periodic(self):
-        actualFrontLeft = SwerveModuleState(
-            self.frontLeftDriveEncoder.getVelocity(),
-            wpimath.geometry.Rotation2d(self.frontLeftSteerEncoder.getPosition())
-        )
-        actualFrontRight = SwerveModuleState(
-            self.frontRightDriveEncoder.getVelocity(),
-            wpimath.geometry.Rotation2d(self.frontRightSteerEncoder.getPosition())
-        )
-        actualBackLeft = SwerveModuleState(
-            self.backLeftDriveEncoder.getVelocity(),
-            wpimath.geometry.Rotation2d(self.backLeftSteerEncoder.getPosition())
-        )
-        actualBackRight = SwerveModuleState(
-            self.backRightDriveEncoder.getVelocity(),
-            wpimath.geometry.Rotation2d(self.backRightSteerEncoder.getPosition())
-        )
+        actualFrontLeft = self.frontLeftSwerveModule.getState()
+        actualFrontRight = self.frontRightSwerveModule.getState()
+        actualBackLeft = self.backLeftSwerveModule.getState()
+        actualBackRight = self.backRightSwerveModule.getState()
         actualSwerveStatesTopic.set([actualFrontLeft,actualFrontRight,actualBackLeft,actualBackRight])
 
     def drive(self, xSpeed: float, ySpeed: float, turnSpeed: float):
         speeds= ChassisSpeeds(xSpeed, ySpeed, turnSpeed)
         frontLeft, frontRight,backLeft,backRight= kinematics.toSwerveModuleStates(speeds)
         desiredSwerveStatesTopic.set([frontLeft,frontRight,backLeft,backRight])
-        self.frontLeftDrivePidController.setReference(frontLeft.speed,rev.SparkLowLevel.ControlType.kVelocity)
-        self.frontRightDrivePidController.setReference(frontRight.speed,rev.SparkLowLevel.ControlType.kVelocity)
-        self.backLeftDrivePidController.setReference(backLeft.speed,rev.SparkLowLevel.ControlType.kVelocity)
-        self.backRightDrivePidController.setReference(backRight.speed,rev.SparkLowLevel.ControlType.kVelocity)
-        self.frontLeftSteerPidController.setReference(frontLeft.angle.radians()+(3*math.pi/2),rev.SparkLowLevel.ControlType.kPosition)
-        self.frontRightSteerPidController.setReference(frontRight.angle.radians(),rev.SparkLowLevel.ControlType.kPosition)
-        self.backLeftSteerPidController.setReference(backLeft.angle.radians()+(math.pi),rev.SparkLowLevel.ControlType.kPosition)
-        self.backRightSteerPidController.setReference(backRight.angle.radians()+(math.pi/2),rev.SparkLowLevel.ControlType.kPosition)
+
+        self.frontLeftSwerveModule.setState(frontLeft)
+        self.frontRightSwerveModule.setState(frontRight)
+        self.backLeftSwerveModule.setState(backLeft)
+        self.backRightSwerveModule.setState(backRight)
