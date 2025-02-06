@@ -3,6 +3,7 @@ import math
 import constants
 from wpimath.kinematics import SwerveModuleState
 import wpimath.geometry
+from wpimath.geometry import Rotation2d
 
 driveMotorConfig = rev.SparkMaxConfig()
 driveMotorConfig.smartCurrentLimit(40)
@@ -47,11 +48,14 @@ class SwerveModule:
         self.steerPidController= self.steerMotor.getClosedLoopController()
     
     def setState(self, state: SwerveModuleState):
+        state.angle += Rotation2d(self.angleOffset)
+        encoderRotation = Rotation2d(self.steerEncoder.getPosition())
+        state.speed *= (state.angle - encoderRotation).cos()
         self.drivePidController.setReference(state.speed,rev.SparkLowLevel.ControlType.kVelocity)
-        self.steerPidController.setReference(state.angle.radians()+self.angleOffset,rev.SparkLowLevel.ControlType.kPosition)
+        self.steerPidController.setReference(state.angle.radians(),rev.SparkLowLevel.ControlType.kPosition)
 
     def getState(self) -> SwerveModuleState:
         return SwerveModuleState(
             self.driveEncoder.getVelocity(),
-            wpimath.geometry.Rotation2d(self.steerEncoder.getPosition())
+            Rotation2d(self.steerEncoder.getPosition()-self.angleOffset)
         )
