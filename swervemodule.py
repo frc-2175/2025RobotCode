@@ -50,7 +50,8 @@ class SwerveModule:
     def setState(self, state: SwerveModuleState):
         state.angle += Rotation2d(self.angleOffset)
         encoderRotation = Rotation2d(self.steerEncoder.getPosition())
-        state.speed *= (state.angle - encoderRotation).cos()
+        state.optimize(encoderRotation)
+        state.cosineScale(encoderRotation)
         self.drivePidController.setReference(state.speed,rev.SparkLowLevel.ControlType.kVelocity)
         self.steerPidController.setReference(state.angle.radians(),rev.SparkLowLevel.ControlType.kPosition)
 
