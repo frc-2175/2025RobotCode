@@ -10,6 +10,8 @@ import wpimath.units
 import constants
 
 from subsystems.drivetrain import Drivetrain
+from subsystems.sourceintake import SourceIntake
+from subsystems.elevatorandarm import ElevatorAndArm
 
 class MyRobot(wpilib.TimedRobot):
     leftStick = wpilib.Joystick(0)
@@ -17,13 +19,16 @@ class MyRobot(wpilib.TimedRobot):
     gamePad = wpilib.XboxController(2)
 
     drivetrain = Drivetrain()
+    sourceintake = SourceIntake()
+    elevatorandarm = ElevatorAndArm()
     
     def robotPeriodic(self):
         self.drivetrain.periodic()
+        self.sourceintake.periodic()
+        self.elevatorandarm.periodic()
 
     def teleopPeriodic(self) -> None:
         xSpeed = wpimath.applyDeadband(-self.leftStick.getY(), 0.2)
         ySpeed = wpimath.applyDeadband(-self.leftStick.getX(), 0.2)
         turnSpeed = wpimath.applyDeadband(-self.rightStick.getX(), 0.2)
         self.drivetrain.drive(xSpeed, ySpeed, turnSpeed)
-        
