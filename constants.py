@@ -15,6 +15,7 @@ kMaxElevatorHeight = wpimath.units.inchesToMeters(4 * 12) # m
 kMaxArmSpeed = wpimath.units.degreesToRadians(45) # rad/s
 kMinWristAngle = wpimath.units.degreesToRadians(-90)
 kMaxWristAngle = wpimath.units.degreesToRadians(0)
+kWristMotorReduction = 1 / 20
 
 kSquishyWheelCoralSpeed = 0.4
 kSquishyWheelAlgaeSpeed = 0.6

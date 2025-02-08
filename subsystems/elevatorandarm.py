@@ -1,7 +1,23 @@
 import rev
-
+import math
+from wpimath.geometry import Translation2d
+import wpilib
+import rev
+import wpimath
+import wpimath.geometry
+from wpimath.kinematics import SwerveDrive4Kinematics, ChassisSpeeds, SwerveModuleState
+import ntcore
+import wpimath.units
+import constants
 elevatorMotor2Config = rev.SparkMaxConfig( )
 elevatorMotor2Config.follow(31)
+
+wristMotorConfig = rev.SparkMaxConfig()
+wristMotorConfig.encoder.velocityConversionFactor(
+    (math.pi *constants.kWheelDiameter / constants.kDriveMotorReduction) / 60.0
+).positionConversionFactor(
+    constants.kWristMotorReduction * 2 * math.pi
+)
 
 class ElevatorAndArm:
 
@@ -19,15 +35,21 @@ class ElevatorAndArm:
 
     # TODO: Set elevator spark max soft limits to enforce safety
 
+
     # Arm hardware
     # TODO: Wrist motor (ID 41)
+    wristMotor = rev.SparkMax(41, rev.SparkLowLevel.MotorType.kBrushless)
     # TODO: Outer wheel motor (ID 42)
+    armOuterWheelMotor = rev.SparkMax(42, rev.SparkLowLevel.MotorType.kBrushless)
     # TODO: Inner wheel motor (ID 43)
+    armInnerWheelMotor = rev.SparkMax(43, rev.SparkLowLevel.MotorType.kBrushless)
 
     # TODO: Absolute encoder for the wrist?
 
     # TODO: Set wrist position/velocity conversion factors
+    wristMotor.configure(wristMotorConfig, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
     # TODO: Set wrist spark max soft limits for safety
+
 
     def periodic(self):
         # TODO: Report encoder positions (and anything else) to NetworkTables
@@ -38,6 +60,9 @@ class ElevatorAndArm:
         Manually control the elevator speed. Positive means up, negative means down.
         """
         # TODO: Implement this
+
+        self.elevatorMotor1.set(speed)
+
         pass
 
     def move_arm(self, speed: float):
