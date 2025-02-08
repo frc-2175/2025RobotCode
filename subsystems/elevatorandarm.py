@@ -9,47 +9,50 @@ from wpimath.kinematics import SwerveDrive4Kinematics, ChassisSpeeds, SwerveModu
 import ntcore
 import wpimath.units
 import constants
+
 elevatorMotor2Config = rev.SparkMaxConfig( )
 elevatorMotor2Config.follow(31)
+# TODO: Ensure that this motor is inverted! The above should look like `follow(31, True)`, as there
+# is a second optional parameter to `follow` that controls whether the follower is inverted or not.
 
 wristMotorConfig = rev.SparkMaxConfig()
 wristMotorConfig.encoder.velocityConversionFactor(
+    # TODO: This factor is incorrect. These constants are for the drive system, not for the arm.
+    # The position conversion factor below, however, should (in principle) be correct. This means
+    # that the correct factor here should instead be:
+    #
+    #  constants.kWristMotorReduction * 2 * math.pi / 60.0
+    #
+    # This will convert from RPM (rev/min) to radians/second, which is a more useful unit for us.
     (math.pi *constants.kWheelDiameter / constants.kDriveMotorReduction) / 60.0
 ).positionConversionFactor(
     constants.kWristMotorReduction * 2 * math.pi
 )
 
 class ElevatorAndArm:
-
     # Elevator hardware
-    
-     
-    # TODO: Elevator motor 1 (ID 31)
     elevatorMotor1 = rev.SparkMax(31, rev.SparkLowLevel.MotorType.kBrushless)
-    # TODO: Elevator motor 2 (ID 32)
     elevatorMotor2 = rev.SparkMax(32, rev.SparkLowLevel.MotorType.kBrushless)
-    # TODO: Set elevator motor 2 to follow motor 1
     elevatorMotor2.configure(elevatorMotor2Config, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
-    # TODO: Set elevator position/velocity conversion factors
+    # TODO: Set elevator position/velocity conversion factors. These should be in meters and meters per second respectively.
 
-
-    # TODO: Set elevator spark max soft limits to enforce safety
-
+    # TODO: Set elevator spark max soft limits to enforce safety.
+    # Example:
+    #
+    #  elevatorMotor1Config.softLimit.forwardSoftLimit(constants.kMaxElevatorHeight).reverseSoftLimit(constants.kMinElevatorHeight)
+    #
+    # You may also have to do .forwardSoftLimitEnabled(True).reverseSoftLimitEnabled(True). I'm not sure.
 
     # Arm hardware
-    # TODO: Wrist motor (ID 41)
     wristMotor = rev.SparkMax(41, rev.SparkLowLevel.MotorType.kBrushless)
-    # TODO: Outer wheel motor (ID 42)
     armOuterWheelMotor = rev.SparkMax(42, rev.SparkLowLevel.MotorType.kBrushless)
-    # TODO: Inner wheel motor (ID 43)
     armInnerWheelMotor = rev.SparkMax(43, rev.SparkLowLevel.MotorType.kBrushless)
 
     # TODO: Absolute encoder for the wrist?
 
-    # TODO: Set wrist position/velocity conversion factors
     wristMotor.configure(wristMotorConfig, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
-    # TODO: Set wrist spark max soft limits for safety
-
+    # TODO: Set wrist spark max soft limits for safety. See elevator example above. The soft limits on the arm should be in
+    # radians, and note that we defined negative angle to mean out/down and positive to mean up/in.
 
     def periodic(self):
         # TODO: Report encoder positions (and anything else) to NetworkTables
@@ -59,11 +62,8 @@ class ElevatorAndArm:
         """
         Manually control the elevator speed. Positive means up, negative means down.
         """
-        # TODO: Implement this
-
         self.elevatorMotor1.set(speed)
-
-        pass
+        # The other elevator motor is set as a follower.
 
     def move_arm(self, speed: float):
         """
