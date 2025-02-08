@@ -1,11 +1,23 @@
-class SourceIntake:
-    # TODO: Wheel motor 1
-    # TODO: Wheel motor 2
+import rev
+import math
+import constants
+from wpimath.kinematics import SwerveModuleState
+import wpimath.geometry
+from wpimath.geometry import Rotation2d
 
-    # TODO: Make wheel motor 2 "follow" wheel motor 1
+
+config = rev.SparkMaxConfig()
+config.follow(51, invert=True)
+
+class SourceIntake:
+    
+    primaryWheelMotor = rev.SparkMax(51, rev.SparkLowLevel.MotorType.kBrushless)
+    secondaryWheelMotor = rev.SparkMax(52, rev.SparkLowLevel.MotorType.kBrushless)
+    secondaryWheelMotor.configure(config, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
 
     def periodic(self):
         # TODO: Report encoder positions (and anything else) to NetworkTables
+
         pass
 
     def run_intake(self, speed: float):
@@ -13,5 +25,5 @@ class SourceIntake:
         Positive means moving coral from the funnel through to the arm. Negative is the reverse.
         Valid speeds range from -1 to 1.
         """
-        # TODO: Actually make the motors go
+        self.primaryWheelMotor.set(speed)
         pass
