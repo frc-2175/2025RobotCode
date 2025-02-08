@@ -1,16 +1,28 @@
-class ElevatorAndArm:
-    # Elevator hardware
-    # TODO: Elevator motor 1
-    # TODO: Elevator motor 2
+import rev
 
+elevatorMotor2Config = rev.SparkMaxConfig( )
+elevatorMotor2Config.follow(31)
+
+class ElevatorAndArm:
+
+    # Elevator hardware
+    
+     
+    # TODO: Elevator motor 1 (ID 31)
+    elevatorMotor1 = rev.SparkMax(31, rev.SparkLowLevel.MotorType.kBrushless)
+    # TODO: Elevator motor 2 (ID 32)
+    elevatorMotor2 = rev.SparkMax(32, rev.SparkLowLevel.MotorType.kBrushless)
     # TODO: Set elevator motor 2 to follow motor 1
+    elevatorMotor2.configure(elevatorMotor2Config, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
     # TODO: Set elevator position/velocity conversion factors
+
+
     # TODO: Set elevator spark max soft limits to enforce safety
 
     # Arm hardware
-    # TODO: Wrist motor
-    # TODO: Outer wheel motor
-    # TODO: Inner wheel motor
+    # TODO: Wrist motor (ID 41)
+    # TODO: Outer wheel motor (ID 42)
+    # TODO: Inner wheel motor (ID 43)
 
     # TODO: Absolute encoder for the wrist?
 
