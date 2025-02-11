@@ -33,9 +33,26 @@ class MyRobot(wpilib.TimedRobot):
         turnSpeed = wpimath.applyDeadband(-self.rightStick.getX(), 0.2)
         self.drivetrain.drive(xSpeed, ySpeed, turnSpeed)
 
-        # DO NOT DO THE FOLLOWING UNTIL ALL SAFETY CONSTRAINTS HAVE BEEN PROGRAMMED IN EACH SUBSYSTEM!
-        # TODO: Elevator controls (e.g. left gamepad stick up/down, calling self.drivetrain.move_elevator()
-        # TODO: Arm controls (e.g. right gamepad stick up/down, calling self.drivetrain.move_elevator()
-        # TODO: Source intake controls (e.g. right trigger to pull coral into arm, right bumper to push coral back to source)
-        # TODO: Arm coral controls (e.g. A button to score, B button to reverse)
-        # TODO: Arm algae controls (e.g. left trigger to grab/de-reef, left bumper to score into processor)
+        elevatorSpeed = wpimath.applyDeadband(-self.gamePad.getLeftY(), 0.1)
+        self.elevatorandarm.move_elevator(elevatorSpeed)
+        
+        wristSpeed = wpimath.applyDeadband(-self.gamePad.getRightY(), 0.1)
+        self.elevatorandarm.move_arm(wristSpeed)
+
+        if self.gamePad.getRightTriggerAxis() > 0.5:
+            self.sourceintake.run_intake(constants.kSourceIntakeSpeed)
+        elif self.gamePad.getRightBumperButton():
+            self.sourceintake.run_intake(-constants.kSourceIntakeSpeed)
+        else:
+            self.sourceintake.run_intake(0)
+
+        if self.gamePad.getAButton():
+            self.elevatorandarm.move_coral(constants.kSquishyWheelCoralSpeed)
+        elif self.gamePad.getBButton():
+            self.elevatorandarm.move_coral(-constants.kSquishyWheelCoralSpeed)
+        elif self.gamePad.getLeftTriggerAxis() > 0.5:
+            self.elevatorandarm.move_algae(constants.kSquishyWheelAlgaeSpeed)
+        elif self.gamePad.getLeftBumperButton():
+            self.elevatorandarm.move_algae(-constants.kSquishyWheelAlgaeSpeed)
+        else:
+            self.elevatorandarm.move_coral(0)

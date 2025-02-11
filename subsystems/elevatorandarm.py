@@ -10,52 +10,52 @@ import ntcore
 import wpimath.units
 import constants
 
+elevatorMotor1Config = rev.SparkMaxConfig()
+elevatorMotor1Config.encoder.positionConversionFactor(
+    constants.kElevatorMotorReduction * constants.kElevatorSprocketDiameter * math.pi * 2
+).velocityConversionFactor(
+    constants.kElevatorMotorReduction * constants.kElevatorSprocketDiameter * math.pi * 2 / 60
+)
+elevatorMotor1Config.softLimit.forwardSoftLimit(constants.kMaxElevatorHeight).reverseSoftLimit(constants.kMinElevatorHeight).forwardSoftLimitEnabled(True).reverseSoftLimitEnabled(True)
 elevatorMotor2Config = rev.SparkMaxConfig( )
-elevatorMotor2Config.follow(31)
-# TODO: Ensure that this motor is inverted! The above should look like `follow(31, True)`, as there
-# is a second optional parameter to `follow` that controls whether the follower is inverted or not.
+elevatorMotor2Config.follow(31, True)
 
 wristMotorConfig = rev.SparkMaxConfig()
-wristMotorConfig.encoder.velocityConversionFactor(
-    # TODO: This factor is incorrect. These constants are for the drive system, not for the arm.
-    # The position conversion factor below, however, should (in principle) be correct. This means
-    # that the correct factor here should instead be:
-    #
-    #  constants.kWristMotorReduction * 2 * math.pi / 60.0
-    #
-    # This will convert from RPM (rev/min) to radians/second, which is a more useful unit for us.
-    (math.pi *constants.kWheelDiameter / constants.kDriveMotorReduction) / 60.0
-).positionConversionFactor(
-    constants.kWristMotorReduction * 2 * math.pi
-)
+# wristMotorConfig.encoder.velocityConversionFactor(
+#     constants.kWristMotorReduction * 2 * math.pi / 60.0
+# ).positionConversionFactor(
+#     constants.kWristMotorReduction * 2 * math.pi
+# )
+wristMotorConfig.absoluteEncoder.positionConversionFactor(2*math.pi).velocityConversionFactor(2*math.pi/60)
+wristMotorConfig.softLimit.forwardSoftLimit(constants.kMaxWristAngle).reverseSoftLimit(constants.kMinWristAngle).forwardSoftLimitEnabled(True).reverseSoftLimitEnabled(True)
+
+nt = ntcore.NetworkTableInstance.getDefault()
+elevatorHeightTopic = nt.getFloatTopic("/ElevatorHeight").publish()
+wristAngleTopic = nt.getFloatTopic("/WristAngle").publish()
+CalebIsProTopic = nt.getStringTopic("/CalebIsTheGoat").publish()
+
 
 class ElevatorAndArm:
     # Elevator hardware
     elevatorMotor1 = rev.SparkMax(31, rev.SparkLowLevel.MotorType.kBrushless)
     elevatorMotor2 = rev.SparkMax(32, rev.SparkLowLevel.MotorType.kBrushless)
     elevatorMotor2.configure(elevatorMotor2Config, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
-    # TODO: Set elevator position/velocity conversion factors. These should be in meters and meters per second respectively.
-
-    # TODO: Set elevator spark max soft limits to enforce safety.
-    # Example:
-    #
-    #  elevatorMotor1Config.softLimit.forwardSoftLimit(constants.kMaxElevatorHeight).reverseSoftLimit(constants.kMinElevatorHeight)
-    #
-    # You may also have to do .forwardSoftLimitEnabled(True).reverseSoftLimitEnabled(True). I'm not sure.
+    elevatorMotor1.configure(elevatorMotor1Config, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
+    
+    elevatorEncoder = elevatorMotor1.getEncoder()
 
     # Arm hardware
     wristMotor = rev.SparkMax(41, rev.SparkLowLevel.MotorType.kBrushless)
     armOuterWheelMotor = rev.SparkMax(42, rev.SparkLowLevel.MotorType.kBrushless)
     armInnerWheelMotor = rev.SparkMax(43, rev.SparkLowLevel.MotorType.kBrushless)
-
-    # TODO: Absolute encoder for the wrist?
+    wristEncoder = wristMotor.getAbsoluteEncoder()
 
     wristMotor.configure(wristMotorConfig, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
-    # TODO: Set wrist spark max soft limits for safety. See elevator example above. The soft limits on the arm should be in
-    # radians, and note that we defined negative angle to mean out/down and positive to mean up/in.
 
     def periodic(self):
-        # TODO: Report encoder positions (and anything else) to NetworkTables
+        elevatorHeightTopic.set(self.elevatorEncoder.getPosition())
+        wristAngleTopic.set(self.wristEncoder.getPosition())
+        CalebIsProTopic.set("Caleb is sigma ")
         pass
 
     def move_elevator(self, speed: float):
@@ -70,7 +70,7 @@ class ElevatorAndArm:
         Manually control the arm (wrist) speed. Negative means moving the arm out/down,
         positive means moving the arm up/in.
         """
-        # TODO: Implement this
+        self.wristMotor.set(speed)
         pass
 
     def move_coral(self, speed: float):
@@ -79,7 +79,8 @@ class ElevatorAndArm:
         -1 to 1, where positive means intake -> reef. Speed will be limited by the top
         speed in constants.py.
         """
-        # TODO: Implement this
+        self.armOuterWheelMotor.set(speed)
+        self.armInnerWheelMotor.set(-speed)
         pass
 
     def move_algae(self, speed: float):
@@ -88,7 +89,8 @@ class ElevatorAndArm:
         -1 to 1, where positive means robot -> processor. Speed will be limited by the
         top speed in constants.py.
         """
-        # TODO: Implement this
+        self.armOuterWheelMotor.set(speed)
+        self.armInnerWheelMotor.set(speed)
         pass
 
     
