@@ -10,14 +10,12 @@ config = rev.SparkMaxConfig()
 config.follow(51, invert=True)
 
 class SourceIntake:
-    
     primaryWheelMotor = rev.SparkMax(51, rev.SparkLowLevel.MotorType.kBrushless)
     secondaryWheelMotor = rev.SparkMax(52, rev.SparkLowLevel.MotorType.kBrushless)
     secondaryWheelMotor.configure(config, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
 
     def periodic(self):
         # TODO: Report encoder positions (and anything else) to NetworkTables
-
         pass
 
     def run_intake(self, speed: float):
