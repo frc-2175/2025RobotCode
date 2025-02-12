@@ -19,7 +19,6 @@ elevatorMotor1Config.encoder.positionConversionFactor(
 elevatorMotor1Config.softLimit.forwardSoftLimit(constants.kMaxElevatorHeight).reverseSoftLimit(constants.kMinElevatorHeight).forwardSoftLimitEnabled(True).reverseSoftLimitEnabled(True)
 elevatorMotor2Config = rev.SparkMaxConfig()
 
-# Should this even be inverted?
 elevatorMotor2Config.follow(31, True)
 
 wristMotorConfig = rev.SparkMaxConfig()
@@ -28,7 +27,8 @@ wristMotorConfig = rev.SparkMaxConfig()
 # ).positionConversionFactor(
 #     constants.kWristMotorReduction * 2 * math.pi
 # )
-wristMotorConfig.absoluteEncoder.positionConversionFactor(2*math.pi).velocityConversionFactor(2*math.pi/60)
+wristMotorConfig.inverted(True)
+wristMotorConfig.absoluteEncoder.positionConversionFactor(2*math.pi).velocityConversionFactor(2*math.pi/60).inverted(True).zeroOffset(0.0424)
 wristMotorConfig.softLimit.forwardSoftLimit(constants.kMaxWristAngle).reverseSoftLimit(constants.kMinWristAngle).forwardSoftLimitEnabled(True).reverseSoftLimitEnabled(True)
 
 nt = ntcore.NetworkTableInstance.getDefault()
@@ -39,8 +39,8 @@ CalebIsProTopic = nt.getStringTopic("/CalebIsTheGoat").publish()
 
 class ElevatorAndArm:
     # Elevator hardware
-    elevatorMotor1 = rev.SparkMax(31, rev.SparkLowLevel.MotorType.kBrushless)
-    elevatorMotor2 = rev.SparkMax(32, rev.SparkLowLevel.MotorType.kBrushless)
+    elevatorMotor1 = rev.SparkMax(31, rev.SparkLowLevel.MotorType.kBrushless) #Left motor from robot POV
+    elevatorMotor2 = rev.SparkMax(32, rev.SparkLowLevel.MotorType.kBrushless) #Right motor from robot POV
     elevatorMotor2.configure(elevatorMotor2Config, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
     elevatorMotor1.configure(elevatorMotor1Config, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
     
@@ -56,7 +56,7 @@ class ElevatorAndArm:
 
     def periodic(self):
         elevatorHeightTopic.set(self.elevatorEncoder.getPosition())
-        wristAngleTopic.set(self.wristEncoder.getPosition())
+        wristAngleTopic.set(self.wristEncoder.getPosition() - 3 * math.pi / 2)
         CalebIsProTopic.set("Caleb is sigma ")
         pass
 
@@ -72,7 +72,7 @@ class ElevatorAndArm:
         Manually control the arm (wrist) speed. Negative means moving the arm out/down,
         positive means moving the arm up/in.
         """
-        self.wristMotor.set(speed * 0.2)
+        self.wristMotor.set(speed * 0.1)
         pass
 
     def move_coral(self, speed: float):
