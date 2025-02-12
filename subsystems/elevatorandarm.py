@@ -17,7 +17,9 @@ elevatorMotor1Config.encoder.positionConversionFactor(
     constants.kElevatorMotorReduction * constants.kElevatorSprocketDiameter * math.pi * 2 / 60
 )
 elevatorMotor1Config.softLimit.forwardSoftLimit(constants.kMaxElevatorHeight).reverseSoftLimit(constants.kMinElevatorHeight).forwardSoftLimitEnabled(True).reverseSoftLimitEnabled(True)
-elevatorMotor2Config = rev.SparkMaxConfig( )
+elevatorMotor2Config = rev.SparkMaxConfig()
+
+# Should this even be inverted?
 elevatorMotor2Config.follow(31, True)
 
 wristMotorConfig = rev.SparkMaxConfig()

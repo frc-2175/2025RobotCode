@@ -13,14 +13,15 @@ kMaxSpeed = 0.8 * kMaxSpeedTheoretical
 kMaxElevatorSpeed = wpimath.units.inchesToMeters(9) # m/s
 kMinElevatorHeight = 0
 kMaxElevatorHeight = wpimath.units.inchesToMeters(4 * 12) # m
-kElevatorSprocketDiameter = wpimath.units.inchesToMeters(1.5)
+# Pitch diameter for the WCP 18 tooth sprocket is 1.432 inches
+kElevatorSprocketDiameter = wpimath.units.inchesToMeters(1.432)
 kElevatorMotorReduction = (1 / 20)
 
 # Arm
 kMaxArmSpeed = wpimath.units.degreesToRadians(45) # rad/s
 kMinWristAngle = wpimath.units.degreesToRadians(-90)
 kMaxWristAngle = wpimath.units.degreesToRadians(0)
-kWristMotorReduction = 1 / 20
+kWristMotorReduction = (1 / 20)
 kSquishyWheelCoralSpeed = 0.4
 kSquishyWheelAlgaeSpeed = 0.6
 
