@@ -64,7 +64,7 @@ class ElevatorAndArm:
         """
         Manually control the elevator speed. Positive means up, negative means down.
         """
-        self.elevatorMotor1.set(speed)
+        self.elevatorMotor1.set(speed * 0.2)
         # The other elevator motor is set as a follower.
 
     def move_arm(self, speed: float):
@@ -72,7 +72,7 @@ class ElevatorAndArm:
         Manually control the arm (wrist) speed. Negative means moving the arm out/down,
         positive means moving the arm up/in.
         """
-        self.wristMotor.set(speed)
+        self.wristMotor.set(speed * 0.2)
         pass
 
     def move_coral(self, speed: float):
@@ -81,8 +81,8 @@ class ElevatorAndArm:
         -1 to 1, where positive means intake -> reef. Speed will be limited by the top
         speed in constants.py.
         """
-        self.armOuterWheelMotor.set(speed)
-        self.armInnerWheelMotor.set(-speed)
+        self.armOuterWheelMotor.set(speed * constants.kSquishyWheelCoralSpeed)
+        self.armInnerWheelMotor.set(-speed * constants.kSquishyWheelCoralSpeed)
         pass
 
     def move_algae(self, speed: float):
@@ -91,8 +91,8 @@ class ElevatorAndArm:
         -1 to 1, where positive means robot -> processor. Speed will be limited by the
         top speed in constants.py.
         """
-        self.armOuterWheelMotor.set(speed)
-        self.armInnerWheelMotor.set(speed)
+        self.armOuterWheelMotor.set(speed * constants.kSquishyWheelAlgaeSpeed)
+        self.armInnerWheelMotor.set(speed * constants.kSquishyWheelAlgaeSpeed)
         pass
 
     

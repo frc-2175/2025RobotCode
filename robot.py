@@ -40,19 +40,19 @@ class MyRobot(wpilib.TimedRobot):
         self.elevatorandarm.move_arm(wristSpeed)
 
         if self.gamePad.getRightTriggerAxis() > 0.5:
-            self.sourceintake.run_intake(constants.kSourceIntakeSpeed)
+            self.sourceintake.run_intake(1)
         elif self.gamePad.getRightBumperButton():
-            self.sourceintake.run_intake(-constants.kSourceIntakeSpeed)
+            self.sourceintake.run_intake(-1)
         else:
             self.sourceintake.run_intake(0)
 
         if self.gamePad.getAButton():
-            self.elevatorandarm.move_coral(constants.kSquishyWheelCoralSpeed)
+            self.elevatorandarm.move_coral(1)
         elif self.gamePad.getBButton():
-            self.elevatorandarm.move_coral(-constants.kSquishyWheelCoralSpeed)
+            self.elevatorandarm.move_coral(-1)
         elif self.gamePad.getLeftTriggerAxis() > 0.5:
-            self.elevatorandarm.move_algae(constants.kSquishyWheelAlgaeSpeed)
+            self.elevatorandarm.move_algae(1)
         elif self.gamePad.getLeftBumperButton():
-            self.elevatorandarm.move_algae(-constants.kSquishyWheelAlgaeSpeed)
+            self.elevatorandarm.move_algae(-1)
         else:
             self.elevatorandarm.move_coral(0)

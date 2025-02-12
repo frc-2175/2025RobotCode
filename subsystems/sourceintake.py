@@ -23,5 +23,5 @@ class SourceIntake:
         Positive means moving coral from the funnel through to the arm. Negative is the reverse.
         Valid speeds range from -1 to 1.
         """
-        self.primaryWheelMotor.set(speed)
+        self.primaryWheelMotor.set(speed * constants.kSourceIntakeSpeed)
         pass
