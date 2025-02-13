@@ -8,7 +8,7 @@ from wpimath.kinematics import SwerveDrive4Kinematics, ChassisSpeeds, SwerveModu
 import ntcore
 import wpimath.units
 import constants
-from urcl import URCL
+# from urcl import URCL
 
 from subsystems.drivetrain import Drivetrain
 from subsystems.sourceintake import SourceIntake
@@ -24,8 +24,9 @@ class MyRobot(wpilib.TimedRobot):
     elevatorandarm = ElevatorAndArm()
 
     def robotInit(self):
-        wpilib.DataLogManager.start()
-        URCL.start()
+        # wpilib.DataLogManager.start()
+        # URCL.start()
+        pass
     
     def robotPeriodic(self):
         self.drivetrain.periodic()
@@ -52,9 +53,9 @@ class MyRobot(wpilib.TimedRobot):
             self.sourceintake.run_intake(0)
 
         if self.gamePad.getAButton():
-            self.elevatorandarm.move_coral(1)
-        elif self.gamePad.getBButton():
             self.elevatorandarm.move_coral(-1)
+        elif self.gamePad.getBButton():
+            self.elevatorandarm.move_coral(1)
         elif self.gamePad.getLeftTriggerAxis() > 0.5:
             self.elevatorandarm.move_algae(1)
         elif self.gamePad.getLeftBumperButton():

@@ -9,6 +9,12 @@ import ntcore
 import wpimath.units
 import constants
 
+def wristEncoderToAngle(encoderPosition: float) -> float:
+    return encoderPosition - constants.kWristAngleOffset
+
+def wristAngleToEncoder(angleRadians: float) -> float:
+    return angleRadians + constants.kWristAngleOffset
+
 elevatorMotor1Config = rev.SparkMaxConfig()
 elevatorMotor1Config.encoder.positionConversionFactor(
     constants.kElevatorMotorReduction * constants.kElevatorSprocketDiameter * math.pi * 2
@@ -34,13 +40,13 @@ wristMotorConfig = rev.SparkMaxConfig()
 # )
 wristMotorConfig.inverted(True)
 wristMotorConfig.absoluteEncoder.positionConversionFactor(2*math.pi).velocityConversionFactor(2*math.pi/60).inverted(True).zeroOffset(0.0424)
-wristMotorConfig.softLimit.forwardSoftLimit(constants.kMaxWristAngle).reverseSoftLimit(constants.kMinWristAngle).forwardSoftLimitEnabled(True).reverseSoftLimitEnabled(True)
+#wristMotorConfig.softLimit.forwardSoftLimit(wristAngleToEncoder(constants.kMaxWristAngle)).reverseSoftLimit(wristAngleToEncoder(constants.kMinWristAngle)).forwardSoftLimitEnabled(True).reverseSoftLimitEnabled(True)
 
 nt = ntcore.NetworkTableInstance.getDefault()
 elevatorHeightTopic = nt.getFloatTopic("/ElevatorHeight").publish()
 wristAngleTopic = nt.getFloatTopic("/WristAngle").publish()
+wristAngleRawTopic = nt.getFloatTopic("/WristAngleRawTopic").publish()
 CalebIsProTopic = nt.getStringTopic("/CalebIsTheGoat").publish()
-
 
 class ElevatorAndArm:
     # Elevator hardware
@@ -58,10 +64,13 @@ class ElevatorAndArm:
     wristEncoder = wristMotor.getAbsoluteEncoder()
 
     wristMotor.configure(wristMotorConfig, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
+    armOuterWheelMotor.configure(armOuterWheelMotorConfig, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
+    armInnerWheelMotor.configure(armInnerWheelMotorConfig, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
 
     def periodic(self):
         elevatorHeightTopic.set(self.elevatorEncoder.getPosition())
-        wristAngleTopic.set(self.wristEncoder.getPosition() - 3 * math.pi / 2)
+        wristAngleTopic.set(wristEncoderToAngle(self.wristEncoder.getPosition()))
+        wristAngleRawTopic.set(self.wristEncoder.getPosition())
         CalebIsProTopic.set("Caleb is sigma ")
         pass
 
