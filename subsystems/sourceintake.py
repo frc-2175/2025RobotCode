@@ -5,14 +5,17 @@ from wpimath.kinematics import SwerveModuleState
 import wpimath.geometry
 from wpimath.geometry import Rotation2d
 
-
-config = rev.SparkMaxConfig()
-config.follow(51, invert=True)
+primaryWheelMotorConfig = rev.SparkMaxConfig()
+secondaryWheelMotorConfig = rev.SparkMaxConfig()
+secondaryWheelMotorConfig.follow(51, invert=True)
 
 class SourceIntake:
     primaryWheelMotor = rev.SparkMax(51, rev.SparkLowLevel.MotorType.kBrushless)
     secondaryWheelMotor = rev.SparkMax(52, rev.SparkLowLevel.MotorType.kBrushless)
-    secondaryWheelMotor.configure(config, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
+    primaryWheelMotorConfig.smartCurrentLimit(20)
+    secondaryWheelMotorConfig.smartCurrentLimit(20)
+    secondaryWheelMotor.configure(secondaryWheelMotorConfig, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
+    primaryWheelMotor.configure(primaryWheelMotorConfig, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
 
     def periodic(self):
         # TODO: Report encoder positions (and anything else) to NetworkTables

@@ -22,8 +22,8 @@ kMaxArmSpeed = wpimath.units.degreesToRadians(45) # rad/s
 kMinWristAngle = -2.36 #rad
 kMaxWristAngle = -0.7 #rad
 kWristMotorReduction = (1 / 20)
-kSquishyWheelCoralSpeed = 0.4
-kSquishyWheelAlgaeSpeed = 0.6
+kSquishyWheelCoralSpeed = 0.2
+kSquishyWheelAlgaeSpeed = 0.3
 
 #Source Intake
 kSourceIntakeSpeed = 0.5

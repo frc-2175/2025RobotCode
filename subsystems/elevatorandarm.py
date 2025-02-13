@@ -2,7 +2,6 @@ import rev
 import math
 from wpimath.geometry import Translation2d
 import wpilib
-import rev
 import wpimath
 import wpimath.geometry
 from wpimath.kinematics import SwerveDrive4Kinematics, ChassisSpeeds, SwerveModuleState
@@ -17,9 +16,15 @@ elevatorMotor1Config.encoder.positionConversionFactor(
     constants.kElevatorMotorReduction * constants.kElevatorSprocketDiameter * math.pi * 2 / 60
 )
 elevatorMotor1Config.softLimit.forwardSoftLimit(constants.kMaxElevatorHeight).reverseSoftLimit(constants.kMinElevatorHeight).forwardSoftLimitEnabled(True).reverseSoftLimitEnabled(True)
-elevatorMotor2Config = rev.SparkMaxConfig()
 
+elevatorMotor2Config = rev.SparkMaxConfig()
 elevatorMotor2Config.follow(31, True)
+
+armOuterWheelMotorConfig = rev.SparkMaxConfig()
+armInnerWheelMotorConfig = rev.SparkMaxConfig()
+armOuterWheelMotorConfig.inverted(True)
+armOuterWheelMotorConfig.smartCurrentLimit(20)
+armInnerWheelMotorConfig.smartCurrentLimit(20)
 
 wristMotorConfig = rev.SparkMaxConfig()
 # wristMotorConfig.encoder.velocityConversionFactor(
