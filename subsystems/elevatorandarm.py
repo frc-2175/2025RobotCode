@@ -5,6 +5,7 @@ import wpilib
 import wpimath
 import wpimath.geometry
 from wpimath.kinematics import SwerveDrive4Kinematics, ChassisSpeeds, SwerveModuleState
+from wpimath.controller import ArmFeedforward
 import ntcore
 import wpimath.units
 import constants
@@ -33,9 +34,11 @@ armOuterWheelMotorConfig.smartCurrentLimit(20)
 armInnerWheelMotorConfig.smartCurrentLimit(20)
 
 wristMotorConfig = rev.SparkMaxConfig()
-# wristMotorConfig.encoder.velocityConversionFactor(
-#     constants.kWristMotorReduction * 2 * math.pi / 60.0
-# ).positionConversionFactor(
+wristMotorConfig.encoder.velocityConversionFactor(
+    constants.kWristMotorReduction * 2 * math.pi / 60.0
+)
+# 
+# .positionConversionFactor(
 #     constants.kWristMotorReduction * 2 * math.pi
 # )
 wristMotorConfig.inverted(True)
@@ -46,6 +49,7 @@ nt = ntcore.NetworkTableInstance.getDefault()
 elevatorHeightTopic = nt.getFloatTopic("/ElevatorHeight").publish()
 wristAngleTopic = nt.getFloatTopic("/WristAngle").publish()
 wristAngleRawTopic = nt.getFloatTopic("/WristAngleRawTopic").publish()
+wristAngleSetpointTopic = nt.getFloatTopic("/WristAngleSetpoint").publish()
 CalebIsProTopic = nt.getStringTopic("/CalebIsTheGoat").publish()
 
 class ElevatorAndArm:
@@ -62,16 +66,28 @@ class ElevatorAndArm:
     armOuterWheelMotor = rev.SparkMax(42, rev.SparkLowLevel.MotorType.kBrushless)
     armInnerWheelMotor = rev.SparkMax(43, rev.SparkLowLevel.MotorType.kBrushless)
     wristEncoder = wristMotor.getAbsoluteEncoder()
-
     wristMotor.configure(wristMotorConfig, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
     armOuterWheelMotor.configure(armOuterWheelMotorConfig, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
     armInnerWheelMotor.configure(armInnerWheelMotorConfig, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
+
+    # Arm PID
+    wristController = wristMotor.getClosedLoopController()
+    # Set placeholder PIDF values
+    wristMotorConfig.closedLoop.pid(0.01, 0.0, 0.0)
+
+    wristPositionSetpoint = 0.0
 
     def periodic(self):
         elevatorHeightTopic.set(self.elevatorEncoder.getPosition())
         wristAngleTopic.set(wristEncoderToAngle(self.wristEncoder.getPosition()))
         wristAngleRawTopic.set(self.wristEncoder.getPosition())
-        CalebIsProTopic.set("Caleb is sigma ")
+        wristAngleSetpointTopic.set(self.wristPositionSetpoint)
+
+        # Recalculate the new safe wrist position based on the current elevator height
+        safeWristPosition = self.get_safe_wrist_position(self.wristPositionSetpoint)
+
+        self.wristController.setReference(wristAngleToEncoder(safeWristPosition), rev.SparkMax.ControlType.kPosition)
+
         pass
 
     def move_elevator(self, speed: float):
@@ -109,4 +125,64 @@ class ElevatorAndArm:
         self.armInnerWheelMotor.set(speed * constants.kSquishyWheelAlgaeSpeed)
         pass
 
+    def get_wrist_position(self) -> float:
+        """
+        Get the current wrist position in radians.
+        """
+        return wristEncoderToAngle(self.wristEncoder.getPosition())
+    
+    def get_elevator_position(self) -> float:
+        """
+        Get the current elevator position in meters.
+        """
+        return self.elevatorEncoder.getPosition()
+    
+    def get_safe_wrist_position(self, setpoint) -> float:
+        """
+        Takes a setpoint in radians and returns a safe position based on the 
+        current elevator height. The setpoint is clamped to the range of angles allowed
+        for the current elevator height. If the elevator height is outside all ranges,
+        the always safe angle is returned.
+        """
+        # First, find what constraints apply to the current elevator height
+        elevatorHeight = self.get_elevator_position()
+        for heightRange, (minAngle, maxAngle) in constants.kArmSafetyConstraints.items():
+            if heightRange[0] <= elevatorHeight <= heightRange[1]:
+                # If the setpoint is within the range, return the setpoint
+                if minAngle <= setpoint <= maxAngle:
+                    return setpoint
+                else:
+                    # If the setpoint is outside the range, clamp it to the range
+                    if setpoint < minAngle:
+                        return minAngle
+                    else:
+                        return maxAngle
+        else:
+            # If the elevator height is outside all constraint ranges, return the always safe angle
+            return constants.kArmAlwaysSafeAngle
+    
+    def set_wrist_position(self, setpoint: float):
+        """
+        Set the wrist position in radians. The setpoint is clamped to the range of angles
+        allowed for the current elevator height. If the elevator height is outside all ranges,
+        the always safe angle is used.
+        """
+        # Get the safe wrist position based on the current elevator height
+        setpoint = self.get_safe_wrist_position(setpoint)
+
+        self.wristPositionSetpoint = setpoint
+
+    def calculate_arm_ff(self):
+        """
+        Calculates the arm feedforward based on the current wrist angle
+        """
+
+        wristAngle = self.get_wrist_position()
+
+        # Calculate the arm feedforward
+        armFF = ArmFeedforward(constants.kArmKS, constants.kArmKG, constants.kArmKF, constants.kArmKA)
+
+        ffVoltage = armFF.calculate(wristAngle, self.wristEncoder.getVelocity())
+
+        return ffVoltage
     
