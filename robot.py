@@ -8,6 +8,7 @@ from wpimath.kinematics import SwerveDrive4Kinematics, ChassisSpeeds, SwerveModu
 import ntcore
 import wpimath.units
 import constants
+from urcl import URCL
 
 from subsystems.drivetrain import Drivetrain
 from subsystems.sourceintake import SourceIntake
@@ -21,6 +22,10 @@ class MyRobot(wpilib.TimedRobot):
     drivetrain = Drivetrain()
     sourceintake = SourceIntake()
     elevatorandarm = ElevatorAndArm()
+
+    def robotInit(self):
+        wpilib.DataLogManager.start()
+        URCL.start()
     
     def robotPeriodic(self):
         self.drivetrain.periodic()
