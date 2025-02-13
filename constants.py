@@ -12,7 +12,7 @@ kMaxSpeed = 0.8 * kMaxSpeedTheoretical
 # Elevator
 kMaxElevatorSpeed = wpimath.units.inchesToMeters(9) # m/s
 kMinElevatorHeight = wpimath.units.inchesToMeters(1) # m
-kMaxElevatorHeight = wpimath.units.inchesToMeters(4 * 12 - 1) # m
+kMaxElevatorHeight = wpimath.units.inchesToMeters(4 * 12 - 0.2) # m
 # Pitch diameter for the WCP 18 tooth sprocket is 1.432 inches
 kElevatorSprocketDiameter = wpimath.units.inchesToMeters(1.432)
 kElevatorMotorReduction = (1 / 20)
