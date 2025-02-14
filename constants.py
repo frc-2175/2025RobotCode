@@ -21,21 +21,21 @@ kElevatorMotorReduction = (1 / 20)
 # (constraintMinElevHeight, constraintMaxElevHeight): (minAngle, maxAngle)
 kArmSafetyConstraints = {
     # Prevent from hitting bellypan
-    (float("-inf"), 0.5): (wpimath.units.degreesToRadians(90), wpimath.units.degreesToRadians(180)),
+    (float("-inf"), 0.5): (wpimath.units.degreesToRadians(-90), wpimath.units.degreesToRadians(0)),
     # Unrestricted middle range
-    (0.5, 1.0): (wpimath.units.degreesToRadians(0), wpimath.units.degreesToRadians(180)),
+    (0.5, 1.0): (wpimath.units.degreesToRadians(-180), wpimath.units.degreesToRadians(0)),
     # Prevent from hitting top elevator bar
-    (1.0, float("inf")): (wpimath.units.degreesToRadians(0), wpimath.units.degreesToRadians(160)),
+    (1.0, float("inf")): (wpimath.units.degreesToRadians(-180), wpimath.units.degreesToRadians(-20)),
 }
 
-kArmAlwaysSafeAngle = wpimath.units.degreesToRadians(160) # rad
+kArmAlwaysSafeAngle = wpimath.units.degreesToRadians(-20) # rad
 
 # Arm
 kMaxArmSpeed = wpimath.units.degreesToRadians(45) # rad/s
 kWristAngleOffset = 3 * math.pi / 2
 kMinWristAngle = -2.36 #rad
 kMaxWristAngle = -0.7 #rad
-kWristMotorReduction = (1 / 20)
+kWristMotorReduction = (1 / 20) * (18 / 22)
 kSquishyWheelCoralSpeed = 0.2
 kSquishyWheelAlgaeSpeed = 0.4
 

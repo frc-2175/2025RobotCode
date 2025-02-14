@@ -13,6 +13,7 @@ import constants
 from subsystems.drivetrain import Drivetrain
 from subsystems.sourceintake import SourceIntake
 from subsystems.elevatorandarm import ElevatorAndArm
+import utils
 
 class MyRobot(wpilib.TimedRobot):
     leftStick = wpilib.Joystick(0)
@@ -41,7 +42,10 @@ class MyRobot(wpilib.TimedRobot):
 
         elevatorSpeed = wpimath.applyDeadband(-self.gamePad.getLeftY(), 0.1)
         self.elevatorandarm.move_elevator(elevatorSpeed)
-        
+
+        armAngle = utils.remap(self.rightStick.getThrottle(), (-1, 1), (0, wpimath.units.degreesToRadians(-180)))
+        self.elevatorandarm.set_wrist_position(armAngle)
+
         wristSpeed = wpimath.applyDeadband(-self.gamePad.getRightY(), 0.1)
         self.elevatorandarm.move_arm(wristSpeed)
 

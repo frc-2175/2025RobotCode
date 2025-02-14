@@ -9,6 +9,7 @@ from wpimath.controller import ArmFeedforward
 import ntcore
 import wpimath.units
 import constants
+import utils
 
 def wristEncoderToAngle(encoderPosition: float) -> float:
     return encoderPosition - constants.kWristAngleOffset
@@ -34,13 +35,6 @@ armOuterWheelMotorConfig.smartCurrentLimit(20)
 armInnerWheelMotorConfig.smartCurrentLimit(20)
 
 wristMotorConfig = rev.SparkMaxConfig()
-wristMotorConfig.encoder.velocityConversionFactor(
-    constants.kWristMotorReduction * 2 * math.pi / 60.0
-)
-# 
-# .positionConversionFactor(
-#     constants.kWristMotorReduction * 2 * math.pi
-# )
 wristMotorConfig.inverted(True)
 wristMotorConfig.absoluteEncoder.positionConversionFactor(2*math.pi).velocityConversionFactor(2*math.pi/60).inverted(True).zeroOffset(0.0424)
 #wristMotorConfig.softLimit.forwardSoftLimit(wristAngleToEncoder(constants.kMaxWristAngle)).reverseSoftLimit(wristAngleToEncoder(constants.kMinWristAngle)).forwardSoftLimitEnabled(True).reverseSoftLimitEnabled(True)
@@ -50,6 +44,7 @@ elevatorHeightTopic = nt.getFloatTopic("/ElevatorHeight").publish()
 wristAngleTopic = nt.getFloatTopic("/WristAngle").publish()
 wristAngleRawTopic = nt.getFloatTopic("/WristAngleRawTopic").publish()
 wristAngleSetpointTopic = nt.getFloatTopic("/WristAngleSetpoint").publish()
+wristSafePositionTopic = nt.getFloatTopic("/WristSafePosition").publish()
 CalebIsProTopic = nt.getStringTopic("/CalebIsTheGoat").publish()
 
 class ElevatorAndArm:
@@ -86,6 +81,7 @@ class ElevatorAndArm:
 
         # Recalculate the new safe wrist position based on the current elevator height
         safeWristPosition = self.get_safe_wrist_position(self.wristPositionSetpoint)
+        wristSafePositionTopic.set(safeWristPosition)
 
         self.wristController.setReference(wristAngleToEncoder(safeWristPosition), rev.SparkMax.ControlType.kPosition)
 
@@ -97,14 +93,6 @@ class ElevatorAndArm:
         """
         self.elevatorMotor1.set(speed * 0.2)
         # The other elevator motor is set as a follower.
-
-    def move_arm(self, speed: float):
-        """
-        Manually control the arm (wrist) speed. Negative means moving the arm out/down,
-        positive means moving the arm up/in.
-        """
-        self.wristMotor.set(speed * 0.1)
-        pass
 
     def move_coral(self, speed: float):
         """
@@ -148,18 +136,12 @@ class ElevatorAndArm:
         # First, find what constraints apply to the current elevator height
         elevatorHeight = self.get_elevator_position()
         for heightRange, (minAngle, maxAngle) in constants.kArmSafetyConstraints.items():
-            if heightRange[0] <= elevatorHeight <= heightRange[1]:
-                # If the setpoint is within the range, return the setpoint
-                if minAngle <= setpoint <= maxAngle:
-                    return setpoint
-                else:
-                    # If the setpoint is outside the range, clamp it to the range
-                    if setpoint < minAngle:
-                        return minAngle
-                    else:
-                        return maxAngle
+            if heightRange[0] <= elevatorHeight < heightRange[1]:
+                return utils.clamp(setpoint, minAngle, maxAngle)
         else:
             # If the elevator height is outside all constraint ranges, return the always safe angle
+            # TODO: Replace this with a proper logging solution that goes to AdvantageScope
+            print("ERROR! We should not have a gap in our arm angle limits!")
             return constants.kArmAlwaysSafeAngle
     
     def set_wrist_position(self, setpoint: float):
@@ -168,9 +150,6 @@ class ElevatorAndArm:
         allowed for the current elevator height. If the elevator height is outside all ranges,
         the always safe angle is used.
         """
-        # Get the safe wrist position based on the current elevator height
-        setpoint = self.get_safe_wrist_position(setpoint)
-
         self.wristPositionSetpoint = setpoint
 
     def calculate_arm_ff(self):
