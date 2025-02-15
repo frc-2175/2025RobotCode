@@ -33,6 +33,10 @@ class MyRobot(wpilib.TimedRobot):
         self.drivetrain.periodic()
         self.sourceintake.periodic()
         self.elevatorandarm.periodic()
+    
+    def testPeriodic(self):
+        armAngle = utils.remap(self.rightStick.getRawAxis(2), (-1, 1), (0, wpimath.units.degreesToRadians(-180)))
+        self.elevatorandarm.set_wrist_position(armAngle)
 
     def teleopPeriodic(self) -> None:
         xSpeed = wpimath.applyDeadband(-self.leftStick.getY(), 0.2)
@@ -42,12 +46,6 @@ class MyRobot(wpilib.TimedRobot):
 
         elevatorSpeed = wpimath.applyDeadband(-self.gamePad.getLeftY(), 0.1)
         self.elevatorandarm.move_elevator(elevatorSpeed)
-
-        armAngle = utils.remap(self.rightStick.getThrottle(), (-1, 1), (0, wpimath.units.degreesToRadians(-180)))
-        self.elevatorandarm.set_wrist_position(armAngle)
-
-        wristSpeed = wpimath.applyDeadband(-self.gamePad.getRightY(), 0.1)
-        self.elevatorandarm.move_arm(wristSpeed)
 
         if self.gamePad.getRightTriggerAxis() > 0.5:
             self.sourceintake.run_intake(1)

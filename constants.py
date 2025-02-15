@@ -21,11 +21,13 @@ kElevatorMotorReduction = (1 / 20)
 # (constraintMinElevHeight, constraintMaxElevHeight): (minAngle, maxAngle)
 kArmSafetyConstraints = {
     # Prevent from hitting bellypan
-    (float("-inf"), 0.5): (wpimath.units.degreesToRadians(-90), wpimath.units.degreesToRadians(0)),
+    (float("-inf"), 0.2): (wpimath.units.degreesToRadians(-90), wpimath.units.degreesToRadians(0)),
+    
+    (0.2, 0.4): (wpimath.units.degreesToRadians(-90), wpimath.units.degreesToRadians(-20)),
     # Unrestricted middle range
-    (0.5, 1.0): (wpimath.units.degreesToRadians(-180), wpimath.units.degreesToRadians(0)),
+    (0.4, float("inf")): (wpimath.units.degreesToRadians(-135), wpimath.units.degreesToRadians(-20)),
     # Prevent from hitting top elevator bar
-    (1.0, float("inf")): (wpimath.units.degreesToRadians(-180), wpimath.units.degreesToRadians(-20)),
+    #(1.0, float("inf")): (wpimath.units.degreesToRadians(-180), wpimath.units.degreesToRadians(-20)),
 }
 
 kArmAlwaysSafeAngle = wpimath.units.degreesToRadians(-20) # rad
