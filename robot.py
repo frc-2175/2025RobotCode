@@ -38,6 +38,8 @@ class MyRobot(wpilib.TimedRobot):
         armAngle = utils.remap(self.rightStick.getRawAxis(2), (-1, 1), (0, wpimath.units.degreesToRadians(-180)))
         self.elevatorandarm.set_wrist_position(armAngle)
 
+        self.elevatorandarm.set_pid(utils.remap(self.leftStick.getRawAxis(2), (-1, 1), (0.2, 0)), 0.0002, 0)
+
     def teleopPeriodic(self) -> None:
         xSpeed = wpimath.applyDeadband(-self.leftStick.getY(), 0.2)
         ySpeed = wpimath.applyDeadband(-self.leftStick.getX(), 0.2)

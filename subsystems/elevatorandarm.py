@@ -39,12 +39,23 @@ wristMotorConfig.inverted(True)
 wristMotorConfig.absoluteEncoder.positionConversionFactor(2*math.pi).velocityConversionFactor(2*math.pi/60).inverted(True).zeroOffset(0.0424)
 #wristMotorConfig.softLimit.forwardSoftLimit(wristAngleToEncoder(constants.kMaxWristAngle)).reverseSoftLimit(wristAngleToEncoder(constants.kMinWristAngle)).forwardSoftLimitEnabled(True).reverseSoftLimitEnabled(True)
 
+wristMotorConfig.IdleMode.kCoast
+
 nt = ntcore.NetworkTableInstance.getDefault()
 elevatorHeightTopic = nt.getFloatTopic("/ElevatorHeight").publish()
 wristAngleTopic = nt.getFloatTopic("/WristAngle").publish()
 wristAngleRawTopic = nt.getFloatTopic("/WristAngleRawTopic").publish()
 wristAngleSetpointTopic = nt.getFloatTopic("/WristAngleSetpoint").publish()
 wristSafePositionTopic = nt.getFloatTopic("/WristSafePosition").publish()
+wristFFPositionTopic = nt.getFloatTopic("/WristFFTopic").publish()
+
+# nt.getFloatTopic("/WristP").publish().set(0)
+# nt.getFloatTopic("/WristI").publish().set(0)
+# nt.getFloatTopic("/WristD").publish().set(0)
+wristPTopic = nt.getFloatTopic("/WristP").publish()
+wristITopic = nt.getFloatTopic("/WristI").publish()
+wristDTopic = nt.getFloatTopic("/WristD").publish()
+
 CalebIsProTopic = nt.getStringTopic("/CalebIsTheGoat").publish()
 
 class ElevatorAndArm:
@@ -66,6 +77,10 @@ class ElevatorAndArm:
     wristController = wristMotor.getClosedLoopController()
     # Set placeholder PIDF values
     wristMotorConfig.closedLoop.pid(0.01, 0.0, 0.0)
+    wristMotorConfig.closedLoop.outputRange(-0.1, 0.1)
+    wristMotorConfig.closedLoop.setFeedbackSensor(rev.ClosedLoopConfig.FeedbackSensor.kAbsoluteEncoder)
+    wristMotorConfig.closedLoop.IZone(wpimath.units.degreesToRadians(15))
+
     wristMotor.configure(wristMotorConfig, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
     
     armOuterWheelMotor.configure(armOuterWheelMotorConfig, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
@@ -73,17 +88,33 @@ class ElevatorAndArm:
 
     wristPositionSetpoint = 0.0
 
+    newP = 0
+    newI = 0
+    newD = 0
+
     def periodic(self):
         elevatorHeightTopic.set(self.elevatorEncoder.getPosition())
         wristAngleTopic.set(wristEncoderToAngle(self.wristEncoder.getPosition()))
         wristAngleRawTopic.set(self.wristEncoder.getPosition())
         wristAngleSetpointTopic.set(self.wristPositionSetpoint)
 
+        wristPTopic.set(self.newP)
+        wristITopic.set(self.newI)
+        wristDTopic.set(self.newD)
+
+        newPIDConfig = rev.SparkMaxConfig()
+        newPIDConfig.closedLoop.pid(self.newP, self.newI, self.newD)
+        self.wristMotor.configure(newPIDConfig, rev.SparkMax.ResetMode.kNoResetSafeParameters, rev.SparkMax.PersistMode.kNoPersistParameters)
+
         # Recalculate the new safe wrist position based on the current elevator height
         safeWristPosition = self.get_safe_wrist_position(self.wristPositionSetpoint)
         wristSafePositionTopic.set(safeWristPosition)
 
-        self.wristController.setReference(wristAngleToEncoder(safeWristPosition), rev.SparkMax.ControlType.kPosition)
+        armFF = self.calculate_arm_ff()
+
+        wristFFPositionTopic.set(armFF)
+
+        self.wristController.setReference(wristAngleToEncoder(safeWristPosition), rev.SparkMax.ControlType.kPosition, arbFeedforward=armFF)
 
         pass
 
@@ -160,9 +191,15 @@ class ElevatorAndArm:
         wristAngle = self.get_wrist_position()
 
         # Calculate the arm feedforward
-        armFF = ArmFeedforward(constants.kArmKS, constants.kArmKG, constants.kArmKF, constants.kArmKA)
+        armFF = ArmFeedforward(constants.kArmKS, constants.kArmKG, constants.kArmKV, constants.kArmKA)
 
-        ffVoltage = armFF.calculate(wristAngle, self.wristEncoder.getVelocity())
+        ffVoltage = armFF.calculate(wristAngle + wpimath.units.degreesToRadians(90), self.wristEncoder.getVelocity())
 
         return ffVoltage
+    
+    def set_pid(self, p, i, d):
+        self.newP = p
+        self.newI = i
+        self.newD = d
+
     
