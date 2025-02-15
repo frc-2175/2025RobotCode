@@ -9,6 +9,8 @@ kDriveMotorFreeSpeed = 5676 / 60 #94.6 rev/s
 kMaxSpeedTheoretical = math.pi * kWheelDiameter * kDriveMotorFreeSpeed / kDriveMotorReduction #4.46 m/s
 kMaxSpeed = 0.8 * kMaxSpeedTheoretical
 
+kMaxTurnSpeed = 3 #rad/s
+
 # Elevator
 kMaxElevatorSpeed = wpimath.units.inchesToMeters(9) # m/s
 kMinElevatorHeight = wpimath.units.inchesToMeters(1) # m
@@ -47,6 +49,10 @@ kArmKS = 0.00 #
 kArmKG = 0.47 #V
 kArmKV = 0.49 #V*s/rad
 kArmKA = 0.01 #V*s^2/rad
+
+kArmP = 0.133
+kArmI = 0.0002
+kArmD = 0
 
 #Source Intake
 kSourceIntakeSpeed = 0.15

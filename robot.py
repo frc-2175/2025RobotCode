@@ -35,34 +35,39 @@ class MyRobot(wpilib.TimedRobot):
         self.elevatorandarm.periodic()
     
     def testPeriodic(self):
-        armAngle = utils.remap(self.rightStick.getRawAxis(2), (-1, 1), (0, wpimath.units.degreesToRadians(-180)))
-        self.elevatorandarm.set_wrist_position(armAngle)
+        pass
 
-        self.elevatorandarm.set_pid(utils.remap(self.leftStick.getRawAxis(2), (-1, 1), (0.2, 0)), 0.0002, 0)
 
     def teleopPeriodic(self) -> None:
         xSpeed = wpimath.applyDeadband(-self.leftStick.getY(), 0.2)
         ySpeed = wpimath.applyDeadband(-self.leftStick.getX(), 0.2)
         turnSpeed = wpimath.applyDeadband(-self.rightStick.getX(), 0.2)
-        self.drivetrain.drive(xSpeed, ySpeed, turnSpeed)
+        self.drivetrain.drive(xSpeed, ySpeed, turnSpeed * constants.kMaxTurnSpeed)
 
         elevatorSpeed = wpimath.applyDeadband(-self.gamePad.getLeftY(), 0.1)
         self.elevatorandarm.move_elevator(elevatorSpeed)
 
-        if self.gamePad.getRightTriggerAxis() > 0.5:
-            self.sourceintake.run_intake(1)
-        elif self.gamePad.getRightBumperButton():
-            self.sourceintake.run_intake(-1)
-        else:
-            self.sourceintake.run_intake(0)
-
         if self.gamePad.getAButton():
-            self.elevatorandarm.move_coral(-1)
+            self.elevatorandarm.set_wrist_position(wpimath.units.degreesToRadians(-140))
         elif self.gamePad.getBButton():
-            self.elevatorandarm.move_coral(1)
-        elif self.gamePad.getLeftTriggerAxis() > 0.5:
+            self.elevatorandarm.set_wrist_position(wpimath.units.degreesToRadians(-90))
+        elif self.gamePad.getXButton():
+            self.elevatorandarm.set_wrist_position(wpimath.units.degreesToRadians(-30))
+        elif self.gamePad.getYButton():
+            self.elevatorandarm.set_wrist_position(wpimath.units.degreesToRadians(0))   
+
+        coralSpeed = self.gamePad.getRightTriggerAxis()-self.gamePad.getLeftTriggerAxis()
+
+        if self.gamePad.getLeftBumper():
             self.elevatorandarm.move_algae(1)
-        elif self.gamePad.getLeftBumperButton():
+        elif self.gamePad.getRightBumper():
             self.elevatorandarm.move_algae(-1)
+        elif abs(coralSpeed) > 0.2:
+            self.sourceintake.run_intake(coralSpeed)
+            self.elevatorandarm.move_coral(coralSpeed)
         else:
-            self.elevatorandarm.move_coral(0)
+            self.elevatorandarm.move_algae(0)
+            self.sourceintake.run_intake(0)
+    
+        if self.leftStick.getRawButtonPressed(8):
+            self.drivetrain.reset_heading()

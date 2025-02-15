@@ -47,3 +47,6 @@ class Drivetrain:
         self.frontRightSwerveModule.setState(frontRight)
         self.backLeftSwerveModule.setState(backLeft)
         self.backRightSwerveModule.setState(backRight)
+
+    def reset_heading(self):
+        self.gyro.reset()

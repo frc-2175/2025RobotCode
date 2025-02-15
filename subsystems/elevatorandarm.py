@@ -75,8 +75,9 @@ class ElevatorAndArm:
 
     # Arm PID
     wristController = wristMotor.getClosedLoopController()
-    # Set placeholder PIDF values
-    wristMotorConfig.closedLoop.pid(0.01, 0.0, 0.0)
+    # Set PID from constants
+    wristMotorConfig.closedLoop.pid(constants.kArmP, constants.kArmI, constants.kArmD)
+
     wristMotorConfig.closedLoop.outputRange(-0.1, 0.1)
     wristMotorConfig.closedLoop.setFeedbackSensor(rev.ClosedLoopConfig.FeedbackSensor.kAbsoluteEncoder)
     wristMotorConfig.closedLoop.IZone(wpimath.units.degreesToRadians(15))
@@ -98,13 +99,14 @@ class ElevatorAndArm:
         wristAngleRawTopic.set(self.wristEncoder.getPosition())
         wristAngleSetpointTopic.set(self.wristPositionSetpoint)
 
-        wristPTopic.set(self.newP)
-        wristITopic.set(self.newI)
-        wristDTopic.set(self.newD)
+        # # wristPTopic.set(self.newP)
+        # # wristITopic.set(self.newI)
+        # # wristDTopic.set(self.newD)
 
-        newPIDConfig = rev.SparkMaxConfig()
-        newPIDConfig.closedLoop.pid(self.newP, self.newI, self.newD)
-        self.wristMotor.configure(newPIDConfig, rev.SparkMax.ResetMode.kNoResetSafeParameters, rev.SparkMax.PersistMode.kNoPersistParameters)
+        # # newPIDConfig = rev.SparkMaxConfig()
+        # # newPIDConfig.closedLoop.pid(self.newP, self.newI, self.newD)
+
+        # self.wristMotor.configure(newPIDConfig, rev.SparkMax.ResetMode.kNoResetSafeParameters, rev.SparkMax.PersistMode.kNoPersistParameters)
 
         # Recalculate the new safe wrist position based on the current elevator height
         safeWristPosition = self.get_safe_wrist_position(self.wristPositionSetpoint)
@@ -122,7 +124,7 @@ class ElevatorAndArm:
         """
         Manually control the elevator speed. Positive means up, negative means down.
         """
-        self.elevatorMotor1.set(speed * 0.2)
+        self.elevatorMotor1.set(speed * 0.3)
         # The other elevator motor is set as a follower.
 
     def move_coral(self, speed: float):
