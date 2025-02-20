@@ -75,3 +75,5 @@ kArmD = 0
 
 #Source Intake
 kSourceIntakeSpeed = 0.15
+kSourceIntakeElevatorMaxHeight = wpimath.units.feetToMeters(1) #m
+kSourceIntakeWristMinAngle = wpimath.units.degreesToRadians(-15) #rad
