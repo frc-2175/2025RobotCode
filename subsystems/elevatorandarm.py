@@ -76,8 +76,9 @@ class ElevatorAndArm:
 
     elevatorController = elevatorMotor1.getClosedLoopController()
     elevatorMotor1Config.closedLoop.pid(constants.kElevatorP, constants.kElevatorI, constants.kElevatorD)
-    elevatorMotor1Config.closedLoop.outputRange(-0.1, 0.1)
-    elevatorMotor1Config.closedLoop.setFeedbackSensor(rev.ClosedLoopConfig.FeedbackSensor.kIntegratedSensor)
+    elevatorMotor1Config.closedLoop.outputRange(-0.6, 0.6)
+    elevatorMotor1Config.closedLoop.setFeedbackSensor(rev.ClosedLoopConfig.FeedbackSensor.kPrimaryEncoder)
+    elevatorMotor1Config.closedLoop.IZone(wpimath.units.inchesToMeters(3))
 
     elevatorMotor1.configure(elevatorMotor1Config, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
 
@@ -143,7 +144,7 @@ class ElevatorAndArm:
         """
         
         elevatorMotor1Config.closedLoop.pid(p, i, d)
-        self.elevatorMotor1.configure(self.elevatorMotor1Config, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
+        self.elevatorMotor1.configure(elevatorMotor1Config, rev.SparkMax.ResetMode.kNoResetSafeParameters, rev.SparkMax.PersistMode.kNoPersistParameters)
 
         elevatorPTopic.set(p)
         elevatorITopic.set(i)
@@ -155,7 +156,7 @@ class ElevatorAndArm:
         setpoint is clamped to the range of heights allowed.
         """
 
-        self.elevatorController.setReference(setpoint, rev.ControlType.kPosition, arbFeedforward=0)
+        self.elevatorController.setReference(setpoint, rev.SparkMax.ControlType.kPosition, arbFeedforward=0)
         
         elevatorSetpointTopic.set(setpoint)
         pass

@@ -38,8 +38,8 @@ class MyRobot(wpilib.TimedRobot):
         self.elevatorandarm.periodic()
     
     def testPeriodic(self):
-        self.elevatorandarm.set_elevator_pid(utils.remap(self.leftStick.getRawAxis(2), (-1, 1), (0.2, 0)), 0, 0)
-        self.elevatorandarm.set_elevator_position(0.5)
+        self.elevatorandarm.set_elevator_pid(utils.remap(self.leftStick.getRawAxis(2), (-1, 1), (3, 0)), 0, 0)
+        self.elevatorandarm.set_elevator_position(utils.remap(self.rightStick.getRawAxis(2), (-1, 1), (1, 0)))
         pass
 
 
@@ -54,12 +54,12 @@ class MyRobot(wpilib.TimedRobot):
         gamePieceSpeed = self.gamePad.getRightTriggerAxis()-self.gamePad.getLeftTriggerAxis()
 
         if self.gamePad.getRightBumper():
-            scoringMode = "Coral"
+            self.scoringMode = "Coral"
 
         if self.gamePad.getLeftBumper():
-            scoringMode = "Algae"
+            self.scoringMode = "Algae"
         
-        if scoringMode == "Coral":
+        if self.scoringMode == "Coral":
             if self.gamePad.getAButton():
                 self.elevatorandarm.set_wrist_position(constants.kWristUprightAngle)
                 #TODO: Set Elevator to L1/Handoff Height
@@ -81,7 +81,7 @@ class MyRobot(wpilib.TimedRobot):
             else:
                 self.sourceintake.run_intake(0)
 
-        elif scoringMode == "Algae":
+        elif self.scoringMode == "Algae":
             if self.gamePad.getAButton():
                 self.elevatorandarm.set_wrist_position(constants.kWristAlgaeDereef)
                 algaeReverse = False
