@@ -24,6 +24,8 @@ class MyRobot(wpilib.TimedRobot):
     sourceintake = SourceIntake()
     elevatorandarm = ElevatorAndArm()
 
+    scoringMode = "Coral"
+
     def robotInit(self):
         # wpilib.DataLogManager.start()
         # URCL.start()
@@ -43,31 +45,46 @@ class MyRobot(wpilib.TimedRobot):
         ySpeed = wpimath.applyDeadband(-self.leftStick.getX(), 0.2)
         turnSpeed = wpimath.applyDeadband(-self.rightStick.getX(), 0.2)
         self.drivetrain.drive(xSpeed, ySpeed, turnSpeed * constants.kMaxTurnSpeed)
-
-        elevatorSpeed = wpimath.applyDeadband(-self.gamePad.getLeftY(), 0.1)
-        self.elevatorandarm.move_elevator(elevatorSpeed)
-
-        if self.gamePad.getAButton():
-            self.elevatorandarm.set_wrist_position(wpimath.units.degreesToRadians(-124))
-        elif self.gamePad.getBButton():
-            self.elevatorandarm.set_wrist_position(wpimath.units.degreesToRadians(-110))
-        elif self.gamePad.getXButton():
-            self.elevatorandarm.set_wrist_position(wpimath.units.degreesToRadians(-30))
-        elif self.gamePad.getYButton():
-            self.elevatorandarm.set_wrist_position(wpimath.units.degreesToRadians(0))   
-
-        coralSpeed = self.gamePad.getRightTriggerAxis()-self.gamePad.getLeftTriggerAxis()
-
-        if self.gamePad.getLeftBumper():
-            self.elevatorandarm.move_algae(1)
-        elif self.gamePad.getRightBumper():
-            self.elevatorandarm.move_algae(-1)
-        elif abs(coralSpeed) > 0.2:
-            self.sourceintake.run_intake(coralSpeed)
-            self.elevatorandarm.move_coral(coralSpeed)
-        else:
-            self.elevatorandarm.move_algae(0)
-            self.sourceintake.run_intake(0)
-    
         if self.leftStick.getRawButtonPressed(8):
             self.drivetrain.reset_heading()
+
+        gamePieceSpeed = self.gamePad.getRightTriggerAxis()-self.gamePad.getLeftTriggerAxis()
+
+        if self.gamePad.getRightBumper():
+            scoringMode = "Coral"
+
+        if self.gamePad.getLeftBumper():
+            scoringMode = "Algae"
+        
+        if scoringMode == "Coral":
+            if self.gamePad.getAButton():
+                self.elevatorandarm.set_wrist_position(constants.kWristUprightAngle)
+                #TODO: Set Elevator to L1/Handoff Height
+            elif self.gamePad.getBButton():
+                self.elevatorandarm.set_wrist_position(constants.kWristCoralScoreAngle)
+                #TODO: Set Elevator to L2 Height
+            elif self.gamePad.getXButton():
+                self.elevatorandarm.set_wrist_position(constants.kWristCoralScoreAngle)
+                #TODO: Set Elevator to L3 Height
+            elif self.gamePad.getYButton():
+                self.elevatorandarm.set_wrist_position(constants.kWristCoralScoreAngle)
+                #TODO" Set Elevator to L4 Height
+
+            coralSpeed = wpimath.applyDeadband(gamePieceSpeed, 0.2)
+            self.elevatorandarm.move_coral(coralSpeed)
+            self.sourceintake.run_intake(coralSpeed)
+
+        elif scoringMode == "Algae":
+            if self.gamePad.getAButton():
+                self.elevatorandarm.set_wrist_position(constants.kWristAlgaeDereef)
+                #TODO: Set Elevator to Algae Ground Height
+            elif self.gamePad.getXButton or self.gamePad.getBButton():
+                self.elevatorandarm.set_wrist_position(constants.kWristAlgaeDereef)
+                #TODO Set Elevator To Algae Low DeReef Height
+            elif self.gamePad.getYButton():
+                self.elevatorandarm.set_wrist_position(constants.kWristAlgaeDereef)
+                #TODO Set Elevator To Algae High DeReef Height
+            self.elevatorandarm.move_algae(gamePieceSpeed)
+            self.sourceintake.run_intake(0)
+        else:
+            print(f"Variable scoringMode improper value: {scoringMode}")
