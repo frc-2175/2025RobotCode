@@ -19,6 +19,15 @@ kMaxElevatorHeight = wpimath.units.inchesToMeters(4 * 12 - 0.2) # m
 kElevatorSprocketDiameter = wpimath.units.inchesToMeters(1.432)
 kElevatorMotorReduction = (1 / 20)
 
+# Elevator FF constants
+# https://www.reca.lc/linear?angle=%7B%22s%22%3A90%2C%22u%22%3A%22deg%22%7D&currentLimit=%7B%22s%22%3A40%2C%22u%22%3A%22A%22%7D&efficiency=100&limitAcceleration=0&limitDeceleration=0&limitVelocity=0&limitedAcceleration=%7B%22s%22%3A400%2C%22u%22%3A%22in%2Fs2%22%7D&limitedDeceleration=%7B%22s%22%3A50%2C%22u%22%3A%22in%2Fs2%22%7D&limitedVelocity=%7B%22s%22%3A10%2C%22u%22%3A%22in%2Fs%22%7D&load=%7B%22s%22%3A12.184%2C%22u%22%3A%22lbs%22%7D&motor=%7B%22quantity%22%3A2%2C%22name%22%3A%22NEO%22%7D&ratio=%7B%22magnitude%22%3A20%2C%22ratioType%22%3A%22Reduction%22%7D&spoolDiameter=%7B%22s%22%3A1.432%2C%22u%22%3A%22in%22%7D&travelDistance=%7B%22s%22%3A46%2C%22u%22%3A%22in%22%7D
+# Do we subtract the spring force from the elevator FF? Or just half of it because of pullies?
+# We subtract half the spring force for calculation of the kG, but not the kV or kA
+kElevatorKS = 0.00 #V
+kElevatorKG = 0.09 #V
+kElevatorKV = 10.72 #V*m/s
+kElevatorKA = 0.01 #V*m^2/s^2
+
 # Arm safety constraints, specified in range allowed when elevator is above n meters
 # (constraintMinElevHeight, constraintMaxElevHeight): (minAngle, maxAngle)
 kArmSafetyConstraints = {
