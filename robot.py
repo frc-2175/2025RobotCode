@@ -48,9 +48,9 @@ class MyRobot(wpilib.TimedRobot):
         self.elevatorandarm.move_elevator(elevatorSpeed)
 
         if self.gamePad.getAButton():
-            self.elevatorandarm.set_wrist_position(wpimath.units.degreesToRadians(-140))
+            self.elevatorandarm.set_wrist_position(wpimath.units.degreesToRadians(-124))
         elif self.gamePad.getBButton():
-            self.elevatorandarm.set_wrist_position(wpimath.units.degreesToRadians(-90))
+            self.elevatorandarm.set_wrist_position(wpimath.units.degreesToRadians(-110))
         elif self.gamePad.getXButton():
             self.elevatorandarm.set_wrist_position(wpimath.units.degreesToRadians(-30))
         elif self.gamePad.getYButton():

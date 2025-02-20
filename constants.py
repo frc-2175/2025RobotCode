@@ -14,16 +14,19 @@ kMaxTurnSpeed = 3 #rad/s
 # Elevator
 kMaxElevatorSpeed = wpimath.units.inchesToMeters(9) # m/s
 kMinElevatorHeight = wpimath.units.inchesToMeters(1) # m
-kMaxElevatorHeight = wpimath.units.inchesToMeters(4 * 12 - 0.2) # m
+kMaxElevatorHeight = wpimath.units.inchesToMeters((4 * 12) + 2) # m
 # Pitch diameter for the WCP 18 tooth sprocket is 1.432 inches
 kElevatorSprocketDiameter = wpimath.units.inchesToMeters(1.432)
 kElevatorMotorReduction = (1 / 20)
+
+# Elevator FF constants
+# 
 
 # Arm safety constraints, specified in range allowed when elevator is above n meters
 # (constraintMinElevHeight, constraintMaxElevHeight): (minAngle, maxAngle)
 kArmSafetyConstraints = {
     # Prevent from hitting bellypan
-    (float("-inf"), 0.2): (wpimath.units.degreesToRadians(-90), wpimath.units.degreesToRadians(0)),
+    (float("-inf"), 0.2): (wpimath.units.degreesToRadians(-110), wpimath.units.degreesToRadians(0)),
     
     (0.2, 0.4): (wpimath.units.degreesToRadians(-90), wpimath.units.degreesToRadians(-20)),
     # Unrestricted middle range
