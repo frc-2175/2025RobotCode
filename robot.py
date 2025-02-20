@@ -25,6 +25,7 @@ class MyRobot(wpilib.TimedRobot):
     elevatorandarm = ElevatorAndArm()
 
     scoringMode = "Coral"
+    algaeReverse = False
 
     def robotInit(self):
         # wpilib.DataLogManager.start()
@@ -83,14 +84,24 @@ class MyRobot(wpilib.TimedRobot):
         elif scoringMode == "Algae":
             if self.gamePad.getAButton():
                 self.elevatorandarm.set_wrist_position(constants.kWristAlgaeDereef)
+                algaeReverse = False
                 #TODO: Set Elevator to Algae Ground Height
             elif self.gamePad.getXButton or self.gamePad.getBButton():
                 self.elevatorandarm.set_wrist_position(constants.kWristAlgaeDereef)
+                algaeReverse = False
                 #TODO Set Elevator To Algae Low DeReef Height
             elif self.gamePad.getYButton():
                 self.elevatorandarm.set_wrist_position(constants.kWristAlgaeDereef)
+                algaeReverse = True
                 #TODO Set Elevator To Algae High DeReef Height
-            self.elevatorandarm.move_algae(gamePieceSpeed)
+            
+            if algaeReverse == True:
+                self.elevatorandarm.move_algae(gamePieceSpeed)
+            elif algaeReverse == False:
+                self.elevatorandarm.move_algae(-gamePieceSpeed)
+            else:
+                print(f"Variable algaeReverse improper value: {algaeReverse}; expected True or False")
+            
             self.sourceintake.run_intake(0)
         else:
-            print(f"Variable scoringMode improper value: {scoringMode}")
+            print(f"Variable scoringMode improper value: {scoringMode}; expected Coral or Algae")
