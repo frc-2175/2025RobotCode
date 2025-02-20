@@ -28,6 +28,7 @@ elevatorMotor1Config.softLimit.forwardSoftLimit(constants.kMaxElevatorHeight).re
 elevatorMotor2Config = rev.SparkMaxConfig()
 elevatorMotor2Config.follow(31, True)
 
+
 armOuterWheelMotorConfig = rev.SparkMaxConfig()
 armInnerWheelMotorConfig = rev.SparkMaxConfig()
 armOuterWheelMotorConfig.inverted(True)
@@ -52,9 +53,15 @@ wristFFPositionTopic = nt.getFloatTopic("/WristFFTopic").publish()
 # nt.getFloatTopic("/WristP").publish().set(0)
 # nt.getFloatTopic("/WristI").publish().set(0)
 # nt.getFloatTopic("/WristD").publish().set(0)
-wristPTopic = nt.getFloatTopic("/WristP").publish()
-wristITopic = nt.getFloatTopic("/WristI").publish()
-wristDTopic = nt.getFloatTopic("/WristD").publish()
+# wristPTopic = nt.getFloatTopic("/WristP").publish()
+# wristITopic = nt.getFloatTopic("/WristI").publish()
+# wristDTopic = nt.getFloatTopic("/WristD").publish()
+
+elevatorPTopic = nt.getFloatTopic("/ElevatorP").publish()
+elevatorITopic = nt.getFloatTopic("/ElevatorI").publish()
+elevatorDTopic = nt.getFloatTopic("/ElevatorD").publish()
+
+elevatorSetpointTopic = nt.getFloatTopic("/ElevatorSetpoint").publish()
 
 CalebIsProTopic = nt.getStringTopic("/CalebIsTheGoat").publish()
 
@@ -66,6 +73,13 @@ class ElevatorAndArm:
     elevatorMotor1.configure(elevatorMotor1Config, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
     
     elevatorEncoder = elevatorMotor1.getEncoder()
+
+    elevatorController = elevatorMotor1.getClosedLoopController()
+    elevatorMotor1Config.closedLoop.pid(constants.kElevatorP, constants.kElevatorI, constants.kElevatorD)
+    elevatorMotor1Config.closedLoop.outputRange(-0.1, 0.1)
+    elevatorMotor1Config.closedLoop.setFeedbackSensor(rev.ClosedLoopConfig.FeedbackSensor.kIntegratedSensor)
+
+    elevatorMotor1.configure(elevatorMotor1Config, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
 
     # Arm hardware
     wristMotor = rev.SparkMax(41, rev.SparkLowLevel.MotorType.kBrushless)
@@ -88,10 +102,6 @@ class ElevatorAndArm:
     armInnerWheelMotor.configure(armInnerWheelMotorConfig, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
 
     wristPositionSetpoint = 0.0
-
-    newP = 0
-    newI = 0
-    newD = 0
 
     def periodic(self):
         elevatorHeightTopic.set(self.elevatorEncoder.getPosition())
@@ -120,12 +130,36 @@ class ElevatorAndArm:
 
         pass
 
-    def move_elevator(self, speed: float):
+    # def move_elevator(self, speed: float):
+    #     """
+    #     Manually control the elevator speed. Positive means up, negative means down.
+    #     """
+    #     self.elevatorMotor1.set(speed * 0.3)
+    #     # The other elevator motor is set as a follower.
+
+    def set_elevator_pid(self, p: float, i: float, d: float):
         """
-        Manually control the elevator speed. Positive means up, negative means down.
+        Set the elevator PID constants.
         """
-        self.elevatorMotor1.set(speed * 0.3)
-        # The other elevator motor is set as a follower.
+        
+        elevatorMotor1Config.closedLoop.pid(p, i, d)
+        self.elevatorMotor1.configure(self.elevatorMotor1Config, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
+
+        elevatorPTopic.set(p)
+        elevatorITopic.set(i)
+        elevatorDTopic.set(d)
+
+    def set_elevator_position(self, setpoint: float):
+        """
+        Set the elevator position in meters. The
+        setpoint is clamped to the range of heights allowed.
+        """
+
+        self.elevatorController.setReference(setpoint, rev.ControlType.kPosition, arbFeedforward=0)
+        
+        elevatorSetpointTopic.set(setpoint)
+        pass
+
 
     def move_coral(self, speed: float):
         """
@@ -198,10 +232,6 @@ class ElevatorAndArm:
         ffVoltage = armFF.calculate(wristAngle + wpimath.units.degreesToRadians(90), self.wristEncoder.getVelocity())
 
         return ffVoltage
-    
-    def set_pid(self, p, i, d):
-        self.newP = p
-        self.newI = i
-        self.newD = d
+
 
     

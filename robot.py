@@ -35,6 +35,8 @@ class MyRobot(wpilib.TimedRobot):
         self.elevatorandarm.periodic()
     
     def testPeriodic(self):
+        self.elevatorandarm.set_elevator_pid(utils.remap(self.leftStick.getRawAxis(2), (-1, 1), (0.2, 0)), 0, 0)
+        self.elevatorandarm.set_elevator_position(0.5)
         pass
 
 
