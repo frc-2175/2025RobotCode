@@ -87,7 +87,7 @@ class MyRobot(wpilib.TimedRobot):
 
         elif self.scoringMode == "Algae":
             if self.gamePad.getAButton():
-                self.elevatorandarm.set_wrist_position(constants.kWristAlgaeDereef)
+                self.elevatorandarm.set_wrist_position(constants.kWristAlgaeGround)
                 algaeReverse = False
                 #TODO: Set Elevator to Algae Ground Height
                 self.elevatorandarm.set_elevator_position(constants.kElevatorAlgaeGround)

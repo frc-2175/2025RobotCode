@@ -6,6 +6,7 @@ import wpimath.geometry
 from wpimath.geometry import Rotation2d
 
 primaryWheelMotorConfig = rev.SparkMaxConfig()
+primaryWheelMotorConfig.IdleMode(rev.SparkMax.IdleMode.kBrake)
 secondaryWheelMotorConfig = rev.SparkMaxConfig()
 secondaryWheelMotorConfig.follow(51, invert=True)
 
