@@ -62,16 +62,20 @@ class MyRobot(wpilib.TimedRobot):
         if self.scoringMode == "Coral":
             if self.gamePad.getAButton():
                 self.elevatorandarm.set_wrist_position(constants.kWristUprightAngle)
-                #TODO: Set Elevator to L1/Handoff Height
+                #Set Elevator to L1/Handoff Height
+                self.elevatorandarm.set_elevator_position(constants.kElevatorL1)
             elif self.gamePad.getBButton():
                 self.elevatorandarm.set_wrist_position(constants.kWristCoralScoreAngle)
-                #TODO: Set Elevator to L2 Height
+                #Set Elevator to L2 Height
+                self.elevatorandarm.set_elevator_position(constants.kElevatorL2)
             elif self.gamePad.getXButton():
                 self.elevatorandarm.set_wrist_position(constants.kWristCoralScoreAngle)
                 #TODO: Set Elevator to L3 Height
+                self.elevatorandarm.set_elevator_position(constants.kElevatorL3)
             elif self.gamePad.getYButton():
                 self.elevatorandarm.set_wrist_position(constants.kWristCoralScoreAngle)
                 #TODO" Set Elevator to L4 Height
+                self.elevatorandarm.set_elevator_position(constants.kElevatorL4)
 
             coralSpeed = wpimath.applyDeadband(gamePieceSpeed, 0.2)
             self.elevatorandarm.move_coral(coralSpeed)
