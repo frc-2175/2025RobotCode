@@ -95,10 +95,12 @@ class MyRobot(wpilib.TimedRobot):
                 self.elevatorandarm.set_wrist_position(constants.kWristAlgaeDereef)
                 algaeReverse = False
                 #TODO Set Elevator To Algae Low DeReef Height
+                self.elevatorandarm.set_elevator_position(constants.kElevatorAlgaeLow)
             elif self.gamePad.getYButton():
                 self.elevatorandarm.set_wrist_position(constants.kWristAlgaeDereef)
                 algaeReverse = True
                 #TODO Set Elevator To Algae High DeReef Height
+                self.elevatorandarm.set_elevator_position(constants.kElevatorAlgaeHigh)
             
             if algaeReverse == True:
                 self.elevatorandarm.move_algae(gamePieceSpeed)
