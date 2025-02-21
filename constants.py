@@ -34,7 +34,7 @@ kElevatorKA = 0.01 #V*m^2/s^2
 
 #Elevator Presets
 kElevatorL1 = wpimath.units.inchesToMeters(4.7)
-kElevatorL2 = wpimath.units.inchesToMeters(26)
+kElevatorL2 = wpimath.units.inchesToMeters(9)
 kElevatorL3 = wpimath.units.inchesToMeters(32)
 kElevatorL4 = wpimath.units.inchesToMeters(54)
 
