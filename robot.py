@@ -91,11 +91,11 @@ class MyRobot(wpilib.TimedRobot):
                 self.algaeReverse = False
                 #TODO: Set Elevator to Algae Ground Height
                 self.elevatorandarm.set_elevator_position(constants.kElevatorAlgaeGround)
-            elif self.gamePad.getXButton or self.gamePad.getBButton():
+            elif self.gamePad.getXButton() or self.gamePad.getBButton():
                 self.elevatorandarm.set_wrist_position(constants.kWristAlgaeDereef)
                 self.algaeReverse = False
                 #TODO Set Elevator To Algae Low DeReef Height
-                self.elevatorandarm.set_elevator_position(constants.kElevatorL2 + wpimath.units.inchesToMeters(6))
+                self.elevatorandarm.set_elevator_position(constants.kElevatorAlgaeLow)
             elif self.gamePad.getYButton():
                 self.elevatorandarm.set_wrist_position(constants.kWristAlgaeDereef)
                 self.algaeReverse = True

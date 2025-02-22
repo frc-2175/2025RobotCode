@@ -19,6 +19,8 @@ kMaxElevatorHeight = wpimath.units.inchesToMeters((4 * 12) + 2) # m
 kElevatorSprocketDiameter = wpimath.units.inchesToMeters(1.432)
 kElevatorMotorReduction = (1 / 20)
 
+kElevatorCurentLimit = 20
+
 kElevatorP = 3
 kElevatorI = 0
 kElevatorD = 0
@@ -39,8 +41,8 @@ kElevatorL3 = wpimath.units.inchesToMeters(27.14)
 kElevatorL4 = wpimath.units.inchesToMeters(52)
 
 kElevatorAlgaeGround = wpimath.units.inchesToMeters(15.8)
-kElevatorAlgaeLow = wpimath.units.inchesToMeters(14)
-kElevatorAlgaeHigh = wpimath.units.inchesToMeters(36)
+kElevatorAlgaeLow = wpimath.units.inchesToMeters(36)
+kElevatorAlgaeHigh = wpimath.units.inchesToMeters(50)
 
 # Arm safety constraints, specified in range allowed when elevator is above n meters
 # (constraintMinElevHeight, constraintMaxElevHeight): (minAngle, maxAngle)
