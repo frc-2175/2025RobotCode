@@ -35,11 +35,11 @@ kElevatorKA = 0.01 #V*m^2/s^2
 #Elevator Presets
 kElevatorL1 = wpimath.units.inchesToMeters(3.94)
 kElevatorL2 = wpimath.units.inchesToMeters(10.75)
-kElevatorL3 = wpimath.units.inchesToMeters(26.14)
+kElevatorL3 = wpimath.units.inchesToMeters(27.14)
 kElevatorL4 = wpimath.units.inchesToMeters(52)
 
 kElevatorAlgaeGround = wpimath.units.inchesToMeters(15.8)
-kElevatorAlgaeLow = wpimath.units.inchesToMeters(13)
+kElevatorAlgaeLow = wpimath.units.inchesToMeters(14)
 kElevatorAlgaeHigh = wpimath.units.inchesToMeters(36)
 
 # Arm safety constraints, specified in range allowed when elevator is above n meters
@@ -48,7 +48,7 @@ kArmSafetyConstraints = {
     # Prevent from hitting bellypan
     (float("-inf"), 0.2): (wpimath.units.degreesToRadians(-110), wpimath.units.degreesToRadians(0)),
     
-    (0.2, 0.4): (wpimath.units.degreesToRadians(-90), wpimath.units.degreesToRadians(-20)),
+    (0.2, 0.4): (wpimath.units.degreesToRadians(-130), wpimath.units.degreesToRadians(-20)),
     # Unrestricted middle range
     (0.4, float("inf")): (wpimath.units.degreesToRadians(-135), wpimath.units.degreesToRadians(-20)),
     # Prevent from hitting top elevator bar
@@ -70,7 +70,7 @@ kSquishyWheelAlgaeSpeed = 0.4
 kWristUprightAngle = wpimath.units.degreesToRadians(0) #rad
 kWristCoralScoreAngle = wpimath.units.degreesToRadians(-30) #rad
 kWristAlgaeDereef = wpimath.units.degreesToRadians(-110) #rad
-kWristAlgaeGround = wpimath.units.degreesToRadians(-124) #rad
+kWristAlgaeGround = wpimath.units.degreesToRadians(-130) #rad
 
 # Arm FF constants
 # https://www.reca.lc/arm?armMass=%7B%22s%22%3A5%2C%22u%22%3A%22lbs%22%7D&comLength=%7B%22s%22%3A5.97%2C%22u%22%3A%22in%22%7D&currentLimit=%7B%22s%22%3A38%2C%22u%22%3A%22A%22%7D&efficiency=80&endAngle=%7B%22s%22%3A90%2C%22u%22%3A%22deg%22%7D&iterationLimit=10000&motor=%7B%22quantity%22%3A1%2C%22name%22%3A%22NEO%22%7D&ratio=%7B%22magnitude%22%3A25%2C%22ratioType%22%3A%22Reduction%22%7D&startAngle=%7B%22s%22%3A-90%2C%22u%22%3A%22deg%22%7D

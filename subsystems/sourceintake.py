@@ -6,9 +6,9 @@ import wpimath.geometry
 from wpimath.geometry import Rotation2d
 
 primaryWheelMotorConfig = rev.SparkMaxConfig()
-primaryWheelMotorConfig.setIdleMode(rev.SparkMax.IdleMode.kBrake)
+primaryWheelMotorConfig.setIdleMode(primaryWheelMotorConfig.IdleMode(rev.SparkMax.IdleMode.kBrake))
 secondaryWheelMotorConfig = rev.SparkMaxConfig()
-secondaryWheelMotorConfig.setIdleMode(rev.SparkMax.IdleMode.kBrake)
+secondaryWheelMotorConfig.setIdleMode(secondaryWheelMotorConfig.IdleMode(rev.SparkMax.IdleMode.kBrake))
 secondaryWheelMotorConfig.follow(51, invert=True)
 
 class SourceIntake:

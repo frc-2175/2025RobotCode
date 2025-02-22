@@ -24,7 +24,7 @@ class MyRobot(wpilib.TimedRobot):
     sourceintake = SourceIntake()
     elevatorandarm = ElevatorAndArm()
 
-    scoringMode = "Coral"
+    scoringMode = 0
     algaeReverse = False
 
     def robotInit(self):
@@ -54,12 +54,12 @@ class MyRobot(wpilib.TimedRobot):
         gamePieceSpeed = self.gamePad.getRightTriggerAxis()-self.gamePad.getLeftTriggerAxis()
 
         if self.gamePad.getRightBumper():
-            self.scoringMode = "Coral"
+            self.scoringMode = 0
 
         if self.gamePad.getLeftBumper():
-            self.scoringMode = "Algae"
+            self.scoringMode = 1
         
-        if self.scoringMode == "Coral":
+        if self.scoringMode == 0:
             if self.gamePad.getAButton():
                 self.elevatorandarm.set_wrist_position(constants.kWristUprightAngle)
                 #Set Elevator to L1/Handoff Height
@@ -85,7 +85,7 @@ class MyRobot(wpilib.TimedRobot):
             else:
                 self.sourceintake.run_intake(0)
 
-        elif self.scoringMode == "Algae":
+        elif self.scoringMode == 1:
             if self.gamePad.getAButton():
                 self.elevatorandarm.set_wrist_position(constants.kWristAlgaeGround)
                 self.algaeReverse = False
@@ -95,7 +95,7 @@ class MyRobot(wpilib.TimedRobot):
                 self.elevatorandarm.set_wrist_position(constants.kWristAlgaeDereef)
                 self.algaeReverse = False
                 #TODO Set Elevator To Algae Low DeReef Height
-                self.elevatorandarm.set_elevator_position(constants.kElevatorAlgaeLow)
+                self.elevatorandarm.set_elevator_position(constants.kElevatorL2 + wpimath.units.inchesToMeters(6))
             elif self.gamePad.getYButton():
                 self.elevatorandarm.set_wrist_position(constants.kWristAlgaeDereef)
                 self.algaeReverse = True
