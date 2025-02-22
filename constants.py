@@ -68,7 +68,11 @@ kWristMotorReduction = (1 / 20) * (18 / 22)
 kSquishyWheelCoralSpeed = 0.2
 kSquishyWheelAlgaeSpeed = 0.4
 
-#Arm Angle Presets
+# Safe wrist angles while moving
+kSafeMovingWristAngle = wpimath.units.degreesToRadians(-90) #rad
+kSafeMovingWristAngleTolerance = wpimath.units.degreesToRadians(10) #rad
+
+# Arm angle presets
 kWristUprightAngle = wpimath.units.degreesToRadians(0) #rad
 kWristCoralScoreAngle = wpimath.units.degreesToRadians(-30) #rad
 kWristAlgaeDereef = wpimath.units.degreesToRadians(-110) #rad
