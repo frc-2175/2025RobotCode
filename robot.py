@@ -88,27 +88,27 @@ class MyRobot(wpilib.TimedRobot):
         elif self.scoringMode == "Algae":
             if self.gamePad.getAButton():
                 self.elevatorandarm.set_wrist_position(constants.kWristAlgaeGround)
-                algaeReverse = False
+                self.algaeReverse = False
                 #TODO: Set Elevator to Algae Ground Height
                 self.elevatorandarm.set_elevator_position(constants.kElevatorAlgaeGround)
             elif self.gamePad.getXButton or self.gamePad.getBButton():
                 self.elevatorandarm.set_wrist_position(constants.kWristAlgaeDereef)
-                algaeReverse = False
+                self.algaeReverse = False
                 #TODO Set Elevator To Algae Low DeReef Height
                 self.elevatorandarm.set_elevator_position(constants.kElevatorAlgaeLow)
             elif self.gamePad.getYButton():
                 self.elevatorandarm.set_wrist_position(constants.kWristAlgaeDereef)
-                algaeReverse = True
+                self.algaeReverse = True
                 #TODO Set Elevator To Algae High DeReef Height
                 self.elevatorandarm.set_elevator_position(constants.kElevatorAlgaeHigh)
             
-            if algaeReverse == True:
+            if self.algaeReverse == True:
                 self.elevatorandarm.move_algae(gamePieceSpeed)
-            elif algaeReverse == False:
+            elif self.algaeReverse == False:
                 self.elevatorandarm.move_algae(-gamePieceSpeed)
             else:
-                print(f"Variable algaeReverse improper value: {algaeReverse}; expected True or False")
+                print(f"Variable algaeReverse improper value: {self.algaeReverse}; expected True or False")
             
             self.sourceintake.run_intake(0)
         else:
-            print(f"Variable scoringMode improper value: {scoringMode}; expected Coral or Algae")
+            print(f"Variable scoringMode improper value: {self.scoringMode}; expected Coral or Algae")

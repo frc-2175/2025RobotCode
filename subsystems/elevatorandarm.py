@@ -43,7 +43,7 @@ wristMotorConfig.inverted(True)
 wristMotorConfig.absoluteEncoder.positionConversionFactor(2*math.pi).velocityConversionFactor(2*math.pi/60).inverted(True).zeroOffset(0.0424)
 #wristMotorConfig.softLimit.forwardSoftLimit(wristAngleToEncoder(constants.kMaxWristAngle)).reverseSoftLimit(wristAngleToEncoder(constants.kMinWristAngle)).forwardSoftLimitEnabled(True).reverseSoftLimitEnabled(True)
 
-wristMotorConfig.IdleMode.kCoast
+wristMotorConfig.IdleMode.kBrake
 
 nt = ntcore.NetworkTableInstance.getDefault()
 elevatorHeightTopic = nt.getFloatTopic("/ElevatorHeight").publish()
