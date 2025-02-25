@@ -26,8 +26,8 @@ elevatorMotor1Config.encoder.positionConversionFactor(
 elevatorMotor1Config.softLimit.forwardSoftLimit(constants.kMaxElevatorHeight).reverseSoftLimit(constants.kMinElevatorHeight).forwardSoftLimitEnabled(True).reverseSoftLimitEnabled(True)
 elevatorMotor1Config.setIdleMode(elevatorMotor1Config.IdleMode(rev.SparkMax.IdleMode.kBrake))
 
-elevatorMotor2Config = rev.SparkMaxConfig()
-elevatorMotor2Config.follow(31, True)
+#elevatorMotor2Config = rev.SparkMaxConfig()
+#elevatorMotor2Config.follow(31, True)
 
 
 armOuterWheelMotorConfig = rev.SparkMaxConfig()
@@ -40,6 +40,7 @@ armInnerWheelMotorConfig.setIdleMode(armOuterWheelMotorConfig.IdleMode(rev.Spark
 
 wristMotorConfig = rev.SparkMaxConfig()
 wristMotorConfig.inverted(True)
+wristMotorConfig.smartCurrentLimit(40)
 wristMotorConfig.absoluteEncoder.positionConversionFactor(2*math.pi).velocityConversionFactor(2*math.pi/60).inverted(True).zeroOffset(0.0424)
 #wristMotorConfig.softLimit.forwardSoftLimit(wristAngleToEncoder(constants.kMaxWristAngle)).reverseSoftLimit(wristAngleToEncoder(constants.kMinWristAngle)).forwardSoftLimitEnabled(True).reverseSoftLimitEnabled(True)
 
