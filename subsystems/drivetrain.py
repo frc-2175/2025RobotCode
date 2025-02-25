@@ -8,6 +8,7 @@ from wpimath.kinematics import SwerveDrive4Kinematics, ChassisSpeeds, SwerveModu
 from wpimath.filter import SlewRateLimiter
 import ntcore
 from swervemodule import SwerveModule
+from utils import RotationSlewRateLimiter
 
 wheelDistanceFromCenter = wpimath.units.inchesToMeters(12.375)
 frontLeftLocation = Translation2d(wheelDistanceFromCenter, wheelDistanceFromCenter)
@@ -34,7 +35,7 @@ class Drivetrain:
 
     speedLimiter = SlewRateLimiter(1) #m/s
     rotationLimiter = SlewRateLimiter(math.pi) #rad/s
-    directionLimiter = SlewRateLimiter(math.pi) #rad/s
+    directionLimiter = RotationSlewRateLimiter(math.pi) #rad/s
 
     desiredChassisSpeeds = ChassisSpeeds(0, 0, 0)
     currentChassisSpeeds = ChassisSpeeds(0, 0, 0)
