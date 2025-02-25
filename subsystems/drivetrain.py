@@ -33,9 +33,9 @@ class Drivetrain:
 
     gyro = navx.AHRS.create_spi()
 
-    speedLimiter = SlewRateLimiter(1) #m/s
-    rotationLimiter = SlewRateLimiter(math.pi) #rad/s
-    directionLimiter = RotationSlewRateLimiter(math.pi) #rad/s
+    speedLimiter = SlewRateLimiter(8) #m/s
+    rotationLimiter = SlewRateLimiter(4 * math.pi) #rad/s
+    directionLimiter = RotationSlewRateLimiter(6 * math.pi) #rad/s
 
     desiredChassisSpeeds = ChassisSpeeds(0, 0, 0)
     currentChassisSpeeds = ChassisSpeeds(0, 0, 0)
