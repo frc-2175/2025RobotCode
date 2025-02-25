@@ -16,6 +16,7 @@ driveMotorConfig.closedLoop.setFeedbackSensor(rev.ClosedLoopConfig.FeedbackSenso
 
 steerMotorConfig = rev.SparkMaxConfig()
 steerMotorConfig.absoluteEncoder.positionConversionFactor(2 * math.pi).inverted(True)
+steerMotorConfig.smartCurrentLimit(40)
 steerMotorConfig.closedLoop.setFeedbackSensor(
     rev.ClosedLoopConfig.FeedbackSensor.kAbsoluteEncoder
 ).pid(
