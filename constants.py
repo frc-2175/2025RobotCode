@@ -19,7 +19,7 @@ kMaxElevatorHeight = wpimath.units.inchesToMeters((4 * 12) + 2) # m
 kElevatorSprocketDiameter = wpimath.units.inchesToMeters(1.432)
 kElevatorMotorReduction = (1 / 20)
 
-kElevatorCurentLimit = 20
+kElevatorCurrentLimit = 40
 
 kElevatorP = 3
 kElevatorI = 0

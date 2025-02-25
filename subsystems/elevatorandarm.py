@@ -70,11 +70,11 @@ CalebIsProTopic = nt.getStringTopic("/CalebIsTheGoat").publish()
 
 class ElevatorAndArm:
     # Elevator hardware
-    elevatorMotor1 = rev.SparkMax(31, rev.SparkLowLevel.MotorType.kBrushless) #Left motor from robot POV
-    elevatorMotor2 = rev.SparkMax(32, rev.SparkLowLevel.MotorType.kBrushless) #Right motor from robot POV
-    elevatorMotor2.configure(elevatorMotor2Config, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
-    elevatorMotor1.configure(elevatorMotor1Config, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
-    
+    elevatorMotor1 = rev.SparkMax(32, rev.SparkLowLevel.MotorType.kBrushless) #Left motor from robot POV
+    #elevatorMotor2 = rev.SparkMax(32, rev.SparkLowLevel.MotorType.kBrushless) #Right motor from robot POV
+    #elevatorMotor2.configure(elevatorMotor2Config, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
+
+
     elevatorEncoder = elevatorMotor1.getEncoder()
 
     elevatorController = elevatorMotor1.getClosedLoopController()
@@ -82,6 +82,8 @@ class ElevatorAndArm:
     elevatorMotor1Config.closedLoop.outputRange(-0.6, 0.6)
     elevatorMotor1Config.closedLoop.setFeedbackSensor(rev.ClosedLoopConfig.FeedbackSensor.kPrimaryEncoder)
     elevatorMotor1Config.closedLoop.IZone(wpimath.units.inchesToMeters(3))
+    elevatorMotor1Config.inverted(True)
+    elevatorMotor1Config.smartCurrentLimit(constants.kElevatorCurrentLimit)
 
     elevatorMotor1.configure(elevatorMotor1Config, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
 
