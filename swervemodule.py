@@ -1,7 +1,7 @@
 import rev
 import math
 import constants
-from wpimath.kinematics import SwerveModuleState
+from wpimath.kinematics import SwerveModuleState, SwerveModulePosition
 import wpimath.geometry
 from wpimath.geometry import Rotation2d
 
@@ -53,11 +53,17 @@ class SwerveModule:
         encoderRotation = Rotation2d(self.steerEncoder.getPosition())
         state.optimize(encoderRotation)
         state.cosineScale(encoderRotation)
-        self.drivePidController.setReference(state.speed,rev.SparkLowLevel.ControlType.kVelocity)
-        self.steerPidController.setReference(state.angle.radians(),rev.SparkLowLevel.ControlType.kPosition)
+        self.drivePidController.setReference(state.speed, rev.SparkLowLevel.ControlType.kVelocity)
+        self.steerPidController.setReference(state.angle.radians(), rev.SparkLowLevel.ControlType.kPosition)
 
     def getState(self) -> SwerveModuleState:
         return SwerveModuleState(
             self.driveEncoder.getVelocity(),
             Rotation2d(self.steerEncoder.getPosition()-self.angleOffset)
+        )
+    
+    def getPosition(self) -> SwerveModulePosition:
+        return SwerveModulePosition(
+            self.driveEncoder.getPosition(),
+            wpimath.geometry.Rotation2d(self.steerEncoder.getPosition() - self.angleOffset),
         )

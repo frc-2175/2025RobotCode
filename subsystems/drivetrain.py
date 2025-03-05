@@ -3,8 +3,8 @@ import rev
 import constants
 import math
 import wpimath
-from wpimath.geometry import Translation2d, Rotation2d
-from wpimath.kinematics import SwerveDrive4Kinematics, ChassisSpeeds, SwerveModuleState
+from wpimath.geometry import Translation2d, Rotation2d, Pose2d
+from wpimath.kinematics import SwerveDrive4Kinematics, ChassisSpeeds, SwerveModuleState, SwerveDrive4Odometry
 from wpimath.filter import SlewRateLimiter
 import ntcore
 from swervemodule import SwerveModule
@@ -15,13 +15,13 @@ frontLeftLocation = Translation2d(wheelDistanceFromCenter, wheelDistanceFromCent
 frontRightLocation = Translation2d(wheelDistanceFromCenter, -wheelDistanceFromCenter)
 backLeftLocation = Translation2d(-wheelDistanceFromCenter, wheelDistanceFromCenter)
 backRightLocation = Translation2d(-wheelDistanceFromCenter, -wheelDistanceFromCenter)
-
 kinematics = SwerveDrive4Kinematics(frontLeftLocation,frontRightLocation,backLeftLocation,backRightLocation)
-nt= ntcore.NetworkTableInstance.getDefault()
-desiredSwerveStatesTopic=nt.getStructArrayTopic("/DesiredSwerveStates", SwerveModuleState).publish()
-actualSwerveStatesTopic=nt.getStructArrayTopic("/ActualSwerveStates", SwerveModuleState).publish()
-desiredChassisSpeedsTopic=nt.getStructTopic("/DesiredChassisSpeeds", ChassisSpeeds).publish()
-currentChassisSpeedsTopic=nt.getStructTopic("/CurrentChassisSpeeds", ChassisSpeeds).publish()
+nt = ntcore.NetworkTableInstance.getDefault()
+desiredSwerveStatesTopic = nt.getStructArrayTopic("/DesiredSwerveStates", SwerveModuleState).publish()
+actualSwerveStatesTopic = nt.getStructArrayTopic("/ActualSwerveStates", SwerveModuleState).publish()
+desiredChassisSpeedsTopic = nt.getStructTopic("/DesiredChassisSpeeds", ChassisSpeeds).publish()
+currentChassisSpeedsTopic = nt.getStructTopic("/CurrentChassisSpeeds", ChassisSpeeds).publish()
+robotPoseTopic = nt.getStructTopic("/RobotPose", Pose2d).publish()
 
 gyroTopic = nt.getStructTopic("/Gyro", Rotation2d).publish()
 
@@ -39,6 +39,18 @@ class Drivetrain:
 
     desiredChassisSpeeds = ChassisSpeeds(0, 0, 0)
     currentChassisSpeeds = ChassisSpeeds(0, 0, 0)
+
+    odometry = SwerveDrive4Odometry(
+        kinematics,
+        gyro.getRotation2d(),
+        (
+            frontLeftSwerveModule.getPosition(),
+            frontRightSwerveModule.getPosition(),
+            backLeftSwerveModule.getPosition(),
+            backRightSwerveModule.getPosition()
+        ),
+        Pose2d(0, 0, gyro.getRotation2d())
+    )
     
     def periodic(self):
         desiredSpeed = math.sqrt(self.desiredChassisSpeeds.vx**2 + self.desiredChassisSpeeds.vy**2)
@@ -48,11 +60,11 @@ class Drivetrain:
         newDirection = self.directionLimiter.calculate(desiredDirection)
         newTurnSpeed = self.rotationLimiter.calculate(self.desiredChassisSpeeds.omega)
 
-        newVX = newSpeed*math.cos(newDirection)
-        newVY = newSpeed*math.sin(newDirection)
+        newVX = newSpeed * math.cos(newDirection)
+        newVY = newSpeed * math.sin(newDirection)
         self.currentChassisSpeeds = ChassisSpeeds(newVX, newVY, newTurnSpeed)
 
-        frontLeft, frontRight,backLeft,backRight= kinematics.toSwerveModuleStates(self.currentChassisSpeeds)
+        frontLeft, frontRight, backLeft, backRight = kinematics.toSwerveModuleStates(self.currentChassisSpeeds)
         desiredSwerveStatesTopic.set([frontLeft,frontRight,backLeft,backRight])
 
         desiredChassisSpeedsTopic.set(self.desiredChassisSpeeds)
@@ -70,7 +82,19 @@ class Drivetrain:
         actualSwerveStatesTopic.set([actualFrontLeft,actualFrontRight,actualBackLeft,actualBackRight])
 
         gyroTopic.set(self.gyro.getRotation2d())
-        
+
+        self.odometry.update(
+            self.gyro.getRotation2d(),
+            (
+                self.frontLeftSwerveModule.getPosition(),
+                self.frontRightSwerveModule.getPosition(),
+                self.backLeftSwerveModule.getPosition(),
+                self.backRightSwerveModule.getPosition()
+            )
+        )
+
+        robotPoseTopic.set(self.odometry.getPose())
+
 
     def drive(self, xSpeed: float, ySpeed: float, turnSpeed: float):
         self.desiredChassisSpeeds = ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, turnSpeed, self.gyro.getRotation2d())
