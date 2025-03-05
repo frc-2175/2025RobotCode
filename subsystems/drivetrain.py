@@ -8,7 +8,9 @@ from wpimath.kinematics import SwerveDrive4Kinematics, ChassisSpeeds, SwerveModu
 from wpimath.filter import SlewRateLimiter
 import ntcore
 from swervemodule import SwerveModule
+import utils
 from utils import RotationSlewRateLimiter
+from chassisspeeds import ChassisSpeeds2175
 
 wheelDistanceFromCenter = wpimath.units.inchesToMeters(12.375)
 frontLeftLocation = Translation2d(wheelDistanceFromCenter, wheelDistanceFromCenter)
@@ -33,12 +35,12 @@ class Drivetrain:
 
     gyro = navx.AHRS.create_spi()
 
-    speedLimiter = SlewRateLimiter(8) #m/s
-    rotationLimiter = SlewRateLimiter(4 * math.pi) #rad/s
-    directionLimiter = RotationSlewRateLimiter(6 * math.pi) #rad/s
+    speedLimiter = SlewRateLimiter(constants.kSpeedSlewRate) #m/s
+    rotationLimiter = SlewRateLimiter(constants.kRotationSlewRate) #rad/s
+    directionLimiter = RotationSlewRateLimiter(constants.kDirectionSlewRate) #rad/s
 
-    desiredChassisSpeeds = ChassisSpeeds(0, 0, 0)
-    currentChassisSpeeds = ChassisSpeeds(0, 0, 0)
+    desiredChassisSpeeds = ChassisSpeeds2175(0, 0, 0)
+    currentChassisSpeeds = ChassisSpeeds2175(0, 0, 0)
 
     odometry = SwerveDrive4Odometry(
         kinematics,
@@ -53,22 +55,54 @@ class Drivetrain:
     )
     
     def periodic(self):
-        desiredSpeed = math.sqrt(self.desiredChassisSpeeds.vx**2 + self.desiredChassisSpeeds.vy**2)
-        newSpeed = self.speedLimiter.calculate(desiredSpeed)
+        currentDirection = self.currentChassisSpeeds.direction
+        currentSpeed = self.currentChassisSpeeds.speed
 
-        desiredDirection = math.atan2(self.desiredChassisSpeeds.vy, self.desiredChassisSpeeds.vx)
-        newDirection = self.directionLimiter.calculate(desiredDirection)
+        desiredDirection = self.desiredChassisSpeeds.direction
+        desiredSpeed = self.desiredChassisSpeeds.speed
+
+        newDirection = None
+        newSpeed = None
+
+        if currentSpeed == 0:
+            newDirectionSlewRate = 500 # arbitarily huge number; effectively instantaneous
+        else:
+            percentOfMaxSpeed = currentSpeed / constants.kMaxSpeed
+            newDirectionSlewRate = constants.kDirectionSlewRate / percentOfMaxSpeed
+        self.directionLimiter.setRateLimit(newDirectionSlewRate)
+
+        angleDiff = utils.angleDifference(desiredDirection, currentDirection)
+        if angleDiff < 0.45 * math.pi:
+            # Angle is close to the correct angle.
+            # Do normal slew limiting for both direction and speed.
+            newDirection = self.directionLimiter.calculate(desiredDirection)
+            newSpeed = self.speedLimiter.calculate(desiredSpeed)
+        elif angleDiff > 0.85 * math.pi:
+            # Angle is close to 180 degrees off.
+            # Decelerate and then change direction.
+            if currentSpeed > 1e-4:
+                # Moving at speed in the wrong direction.
+                # Keep current direction and decelerate.
+                newDirection = currentDirection
+                newSpeed = self.speedLimiter.calculate(0)
+            else:
+                # Stopped. Switch to new direction.
+                newDirection = self.directionLimiter.calculate(desiredDirection, force=True)
+                newSpeed = self.speedLimiter.calculate(desiredSpeed)
+        else:
+            # Angle is very wrong. Decelerate and steer wheels to correct direction.
+            newDirection = self.directionLimiter.calculate(desiredDirection)
+            newSpeed = self.speedLimiter.calculate(0)
+
         newTurnSpeed = self.rotationLimiter.calculate(self.desiredChassisSpeeds.omega)
 
-        newVX = newSpeed * math.cos(newDirection)
-        newVY = newSpeed * math.sin(newDirection)
-        self.currentChassisSpeeds = ChassisSpeeds(newVX, newVY, newTurnSpeed)
+        self.currentChassisSpeeds = ChassisSpeeds2175(newDirection, newSpeed, newTurnSpeed)
 
-        frontLeft, frontRight, backLeft, backRight = kinematics.toSwerveModuleStates(self.currentChassisSpeeds)
+        frontLeft, frontRight, backLeft, backRight = kinematics.toSwerveModuleStates(self.currentChassisSpeeds.toWPILibChassisSpeeds())
         desiredSwerveStatesTopic.set([frontLeft,frontRight,backLeft,backRight])
 
-        desiredChassisSpeedsTopic.set(self.desiredChassisSpeeds)
-        currentChassisSpeedsTopic.set(self.currentChassisSpeeds)
+        desiredChassisSpeedsTopic.set(self.desiredChassisSpeeds.toWPILibChassisSpeeds())
+        currentChassisSpeedsTopic.set(self.currentChassisSpeeds.toWPILibChassisSpeeds())
 
         self.frontLeftSwerveModule.setState(frontLeft)
         self.frontRightSwerveModule.setState(frontRight)
@@ -97,7 +131,11 @@ class Drivetrain:
 
 
     def drive(self, xSpeed: float, ySpeed: float, turnSpeed: float):
-        self.desiredChassisSpeeds = ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, turnSpeed, self.gyro.getRotation2d())
+        newSpeeds = ChassisSpeeds2175.fromFieldRelativeSpeeds(xSpeed, ySpeed, turnSpeed, self.gyro.getRotation2d())
+        if xSpeed == 0 and ySpeed == 0:
+            # Preserve the old direction instead of going to angle 0.
+            newSpeeds.direction = self.currentChassisSpeeds.direction
+        self.desiredChassisSpeeds = newSpeeds
 
     def reset_heading(self):
         self.gyro.reset()

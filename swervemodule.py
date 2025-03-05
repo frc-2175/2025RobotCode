@@ -65,5 +65,5 @@ class SwerveModule:
     def getPosition(self) -> SwerveModulePosition:
         return SwerveModulePosition(
             self.driveEncoder.getPosition(),
-            wpimath.geometry.Rotation2d(self.steerEncoder.getPosition() - self.angleOffset),
+            Rotation2d(self.steerEncoder.getPosition()-self.angleOffset)
         )

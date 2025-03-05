@@ -48,13 +48,26 @@ def wrapAngle(angle:float)  -> float:
     else:
         return angle
 
+def angleDifference(angleA:float, angleB:float) -> float:
+    difference = abs(angleA - angleB)
+    if difference > math.pi:
+        return (2 * math.pi) - difference
+    else:
+        return difference
+    
 class RotationSlewRateLimiter:
     current = 0
 
     def __init__(self, rateLimit: float): # radians per second
         self.rateLimit = rateLimit
     
-    def calculate(self, target: float): # radians
-        new = stepTowardsCircular(self.current, target, self.rateLimit / 50) # assuming 50hz robot loop
+    def calculate(self, target: float, force: bool = False): # radians
+        if force:
+            new = target
+        else:
+            new = stepTowardsCircular(self.current, target, self.rateLimit / 50) # assuming 50hz robot loop
         self.current = new
         return new
+
+    def setRateLimit(self, rateLimit: float): # rad/s
+        self.rateLimit = rateLimit

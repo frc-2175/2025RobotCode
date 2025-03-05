@@ -44,8 +44,8 @@ class MyRobot(wpilib.TimedRobot):
 
 
     def teleopPeriodic(self) -> None:
-        xSpeed = wpimath.applyDeadband(-self.leftStick.getY(), 0.2)
-        ySpeed = wpimath.applyDeadband(-self.leftStick.getX(), 0.2)
+        xSpeed = constants.kMaxSpeed * wpimath.applyDeadband(-self.leftStick.getY(), 0.2)
+        ySpeed = constants.kMaxSpeed * wpimath.applyDeadband(-self.leftStick.getX(), 0.2)
         turnSpeed = wpimath.applyDeadband(-self.rightStick.getX(), 0.2)
         self.drivetrain.drive(xSpeed, ySpeed, turnSpeed * constants.kMaxTurnSpeed)
         if self.leftStick.getRawButtonPressed(8):

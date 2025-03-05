@@ -7,9 +7,14 @@ kDriveMotorReduction = (45 * 22) /(13*15)
 kDriveMotorFreeSpeed = 5676 / 60 #94.6 rev/s
 
 kMaxSpeedTheoretical = math.pi * kWheelDiameter * kDriveMotorFreeSpeed / kDriveMotorReduction #4.46 m/s
-kMaxSpeed = 0.8 * kMaxSpeedTheoretical
+# kMaxSpeed = 0.8 * kMaxSpeedTheoretical
+kMaxSpeed = 0.5 * kMaxSpeedTheoretical
 
-kMaxTurnSpeed = 3 #rad/s
+kMaxTurnSpeed = 2 * math.pi #rad/s
+
+kDirectionSlewRate = 1.2 * kMaxTurnSpeed # rad/s
+kSpeedSlewRate = 1.8 * kMaxSpeed # m/s
+kRotationSlewRate = 2.0 * kMaxTurnSpeed # m/s
 
 # Elevator
 kMaxElevatorSpeed = wpimath.units.inchesToMeters(9) # m/s
