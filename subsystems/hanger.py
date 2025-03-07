@@ -34,8 +34,8 @@ class Hanger:
     hangerMotor.configure(hangerMotorConfig, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
 
     # Telemetry
-    setpointTopic = ntutil.getFloatTopic("/HangerSetpoint")
-    slewedSetpointTopic = ntutil.getFloatTopic("/HangerSlewedSetpoint")
+    setpointTopic = ntutil.getFloatTopic("/Hanger/Setpoint/Actual")
+    slewedSetpointTopic = ntutil.getFloatTopic("/Hanger/Setpoint/Slewed")
 
     # Control variables
     setpoint = 0
