@@ -12,18 +12,25 @@ class Hanger:
     # Hardware
     hangerMotor = rev.SparkMax(61, rev.SparkLowLevel.MotorType.kBrushless)
     hangerController = hangerMotor.getClosedLoopController()
-    hangerEncoder = hangerMotor.getAbsoluteEncoder()
+    # hangerEncoder = hangerMotor.getAbsoluteEncoder()
+    hangerEncoder = hangerMotor.getEncoder()
 
     hangerMotorConfig = rev.SparkMaxConfig()
     (
         hangerMotorConfig
             .setIdleMode(rev.SparkBaseConfig.IdleMode.kBrake)
+            .smartCurrentLimit(40)
     )
     (
         hangerMotorConfig
             .closedLoop
-                .pid(0, 0, 0)
+                .pid(0.1, 0, 0)
                 .setFeedbackSensor(rev.ClosedLoopConfig.FeedbackSensor.kAbsoluteEncoder)
+    )
+    (
+        hangerMotorConfig
+            .encoder
+                .positionConversionFactor(constants.kHangerMotorReduction * math.pi * 2)
     )
     (
         hangerMotorConfig
@@ -36,6 +43,7 @@ class Hanger:
     # Telemetry
     setpointTopic = ntutil.getFloatTopic("/Hanger/Setpoint/Actual")
     slewedSetpointTopic = ntutil.getFloatTopic("/Hanger/Setpoint/Slewed")
+    angleTopic = ntutil.getFloatTopic("/Hanger/Angle")
 
     # Control variables
     setpoint = 0
@@ -48,6 +56,7 @@ class Hanger:
 
         self.setpointTopic.set(self.setpoint)
         self.slewedSetpointTopic.set(slewedHangerSetpoint)
+        self.angleTopic.set(self.hangerEncoder.getPosition())
 
     def set_position(self, setpoint: float):
         """

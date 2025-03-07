@@ -88,7 +88,7 @@ class ElevatorAndArm:
                 .positionConversionFactor(2*math.pi)
                 .velocityConversionFactor(2*math.pi/60)
                 .inverted(True)
-                .zeroOffset(0.0424)
+                .zeroOffset(0.0891859)
     )
     (
         wristMotorConfig

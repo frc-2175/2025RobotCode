@@ -99,3 +99,4 @@ kSourceIntakeWristMinAngle = wpimath.units.degreesToRadians(-15) #rad
 # Hanger
 kHangerMinAngle = -math.pi/2 #rad
 kHangerMaxAngle = math.pi/2 #rad
+kHangerMotorReduction = (1 / 3) * (1 / 9) * (1 / 9)
