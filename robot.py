@@ -14,6 +14,7 @@ from subsystems.drivetrain import Drivetrain
 from subsystems.sourceintake import SourceIntake
 from subsystems.elevatorandarm import ElevatorAndArm
 import utils
+from subsystems.hanger import Hanger
 
 class MyRobot(wpilib.TimedRobot):
     leftStick = wpilib.Joystick(0)
@@ -23,6 +24,7 @@ class MyRobot(wpilib.TimedRobot):
     drivetrain = Drivetrain()
     sourceintake = SourceIntake()
     elevatorandarm = ElevatorAndArm()
+    hanger = Hanger()
 
     scoringMode = 0
     algaeReverse = False
@@ -36,10 +38,12 @@ class MyRobot(wpilib.TimedRobot):
         self.drivetrain.periodic()
         self.sourceintake.periodic()
         self.elevatorandarm.periodic()
+        self.hanger.periodic()
     
     def testPeriodic(self):
-        self.elevatorandarm.set_elevator_pid(utils.remap(self.leftStick.getRawAxis(2), (-1, 1), (3, 0)), 0, 0)
-        self.elevatorandarm.set_elevator_position(utils.remap(self.rightStick.getRawAxis(2), (-1, 1), (1, 0)))
+        # self.elevatorandarm.set_elevator_pid(utils.remap(self.leftStick.getRawAxis(2), (-1, 1), (3, 0)), 0, 0)
+        # self.elevatorandarm.set_elevator_position(utils.remap(self.rightStick.getRawAxis(2), (-1, 1), (1, 0)))
+        self.hanger.set_position(utils.remap(self.leftStick.getRawAxis(2), (-1, 1), (math.pi / 2, -math.pi / 2)))
         pass
 
 
