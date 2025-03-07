@@ -11,6 +11,7 @@ import wpimath.units
 import constants
 import utils
 from wpimath.filter import SlewRateLimiter
+import ntutil
 
 def wristEncoderToAngle(encoderPosition: float) -> float:
     return encoderPosition - constants.kWristAngleOffset
@@ -18,162 +19,156 @@ def wristEncoderToAngle(encoderPosition: float) -> float:
 def wristAngleToEncoder(angleRadians: float) -> float:
     return angleRadians + constants.kWristAngleOffset
 
-elevatorMotor1Config = rev.SparkMaxConfig()
-elevatorMotor1Config.encoder.positionConversionFactor(
-    constants.kElevatorMotorReduction * constants.kElevatorSprocketDiameter * math.pi * 2
-).velocityConversionFactor(
-    constants.kElevatorMotorReduction * constants.kElevatorSprocketDiameter * math.pi * 2 / 60
-)
-elevatorMotor1Config.softLimit.forwardSoftLimit(constants.kMaxElevatorHeight).reverseSoftLimit(constants.kMinElevatorHeight).forwardSoftLimitEnabled(True).reverseSoftLimitEnabled(True)
-elevatorMotor1Config.setIdleMode(elevatorMotor1Config.IdleMode(rev.SparkMax.IdleMode.kBrake))
-
-#elevatorMotor2Config = rev.SparkMaxConfig()
-#elevatorMotor2Config.follow(31, True)
-
-
-armOuterWheelMotorConfig = rev.SparkMaxConfig()
-armInnerWheelMotorConfig = rev.SparkMaxConfig()
-armOuterWheelMotorConfig.inverted(True)
-armOuterWheelMotorConfig.smartCurrentLimit(40)
-armInnerWheelMotorConfig.smartCurrentLimit(40)
-armOuterWheelMotorConfig.setIdleMode(armOuterWheelMotorConfig.IdleMode(rev.SparkMax.IdleMode.kBrake))
-armInnerWheelMotorConfig.setIdleMode(armOuterWheelMotorConfig.IdleMode(rev.SparkMax.IdleMode.kBrake))
-
-wristMotorConfig = rev.SparkMaxConfig()
-wristMotorConfig.inverted(True)
-wristMotorConfig.smartCurrentLimit(40)
-wristMotorConfig.absoluteEncoder.positionConversionFactor(2*math.pi).velocityConversionFactor(2*math.pi/60).inverted(True).zeroOffset(0.0424)
-#wristMotorConfig.softLimit.forwardSoftLimit(wristAngleToEncoder(constants.kMaxWristAngle)).reverseSoftLimit(wristAngleToEncoder(constants.kMinWristAngle)).forwardSoftLimitEnabled(True).reverseSoftLimitEnabled(True)
-
-wristMotorConfig.IdleMode.kBrake
-
-nt = ntcore.NetworkTableInstance.getDefault()
-elevatorHeightTopic = nt.getFloatTopic("/ElevatorHeight").publish()
-wristAngleTopic = nt.getFloatTopic("/WristAngle").publish()
-wristAngleRawTopic = nt.getFloatTopic("/WristAngleRawTopic").publish()
-wristAngleSetpointTopic = nt.getFloatTopic("/WristAngleSetpoint").publish()
-wristSafePositionTopic = nt.getFloatTopic("/WristSafePosition").publish()
-wristFFPositionTopic = nt.getFloatTopic("/WristFFTopic").publish()
-
-# nt.getFloatTopic("/WristP").publish().set(0)
-# nt.getFloatTopic("/WristI").publish().set(0)
-# nt.getFloatTopic("/WristD").publish().set(0)
-# wristPTopic = nt.getFloatTopic("/WristP").publish()
-# wristITopic = nt.getFloatTopic("/WristI").publish()
-# wristDTopic = nt.getFloatTopic("/WristD").publish()
-
-elevatorPTopic = nt.getFloatTopic("/ElevatorP").publish()
-elevatorITopic = nt.getFloatTopic("/ElevatorI").publish()
-elevatorDTopic = nt.getFloatTopic("/ElevatorD").publish()
-
-elevatorSetpointTopic = nt.getFloatTopic("/ElevatorSetpoint").publish()
-elevatorSlewedSetpointTopic = nt.getFloatTopic("/ElevatorSlewedSetpoint").publish()
-
-CalebIsProTopic = nt.getStringTopic("/CalebIsTheGoat").publish()
-
 class ElevatorAndArm:
     # Elevator hardware
     elevatorMotor1 = rev.SparkMax(32, rev.SparkLowLevel.MotorType.kBrushless) #Left motor from robot POV
     #elevatorMotor2 = rev.SparkMax(32, rev.SparkLowLevel.MotorType.kBrushless) #Right motor from robot POV
     #elevatorMotor2.configure(elevatorMotor2Config, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
 
-
     elevatorEncoder = elevatorMotor1.getEncoder()
-
     elevatorController = elevatorMotor1.getClosedLoopController()
-    elevatorMotor1Config.closedLoop.pid(constants.kElevatorP, constants.kElevatorI, constants.kElevatorD)
-    elevatorMotor1Config.closedLoop.outputRange(-0.6, 0.6)
-    elevatorMotor1Config.closedLoop.setFeedbackSensor(rev.ClosedLoopConfig.FeedbackSensor.kPrimaryEncoder)
-    elevatorMotor1Config.closedLoop.IZone(wpimath.units.inchesToMeters(3))
-    elevatorMotor1Config.inverted(True)
-    elevatorMotor1Config.smartCurrentLimit(constants.kElevatorCurrentLimit)
 
+    elevatorMotor1Config = rev.SparkMaxConfig()
+    (
+        elevatorMotor1Config
+            .inverted(True)
+            .setIdleMode(rev.SparkBaseConfig.IdleMode.kBrake)
+            .smartCurrentLimit(constants.kElevatorCurrentLimit)
+    )
+    (
+        elevatorMotor1Config
+            .encoder
+                .positionConversionFactor(constants.kElevatorMotorReduction * constants.kElevatorSprocketDiameter * math.pi * 2)
+                .velocityConversionFactor(constants.kElevatorMotorReduction * constants.kElevatorSprocketDiameter * math.pi * 2 / 60)
+    )
+    (
+        elevatorMotor1Config
+            .softLimit
+                .forwardSoftLimit(constants.kMaxElevatorHeight)
+                .forwardSoftLimitEnabled(True)
+                .reverseSoftLimit(constants.kMinElevatorHeight)
+                .reverseSoftLimitEnabled(True)
+    )
+    (
+        elevatorMotor1Config
+            .closedLoop
+                .pid(constants.kElevatorP, constants.kElevatorI, constants.kElevatorD)
+                .outputRange(-0.6, 0.6)
+                .setFeedbackSensor(rev.ClosedLoopConfig.FeedbackSensor.kPrimaryEncoder)
+                .IZone(wpimath.units.inchesToMeters(3))
+    )
     elevatorMotor1.configure(elevatorMotor1Config, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
 
-    elevatorSetpoint = 0
-    elevatorSetpointLimiter = SlewRateLimiter(1)
+    # Elevator telemetry
+    elevatorHeightTopic = ntutil.getFloatTopic("/Elevator/Height")
+    elevatorPTopic = ntutil.getFloatTopic("/Elevator/P")
+    elevatorITopic = ntutil.getFloatTopic("/Elevator/I")
+    elevatorDTopic = ntutil.getFloatTopic("/Elevator/D")
+    elevatorSetpointTopic = ntutil.getFloatTopic("/Elevator/Setpoint/Actual")
+    elevatorSlewedSetpointTopic = ntutil.getFloatTopic("/Elevator/Setpoint/Slewed")
 
     # Arm hardware
     wristMotor = rev.SparkMax(41, rev.SparkLowLevel.MotorType.kBrushless)
     armOuterWheelMotor = rev.SparkMax(42, rev.SparkLowLevel.MotorType.kBrushless)
     armInnerWheelMotor = rev.SparkMax(43, rev.SparkLowLevel.MotorType.kBrushless)
+
     wristEncoder = wristMotor.getAbsoluteEncoder()
-
-    # Arm PID
     wristController = wristMotor.getClosedLoopController()
-    # Set PID from constants
-    wristMotorConfig.closedLoop.pid(constants.kArmP, constants.kArmI, constants.kArmD)
 
-    wristMotorConfig.closedLoop.outputRange(-0.1, 0.1)
-    wristMotorConfig.closedLoop.setFeedbackSensor(rev.ClosedLoopConfig.FeedbackSensor.kAbsoluteEncoder)
-    wristMotorConfig.closedLoop.IZone(wpimath.units.degreesToRadians(15))
-
+    wristMotorConfig = rev.SparkMaxConfig()
+    (
+        wristMotorConfig
+            .inverted(True)
+            .setIdleMode(rev.SparkBaseConfig.IdleMode.kBrake)
+            .smartCurrentLimit(40)
+    )
+    (
+        wristMotorConfig
+            .absoluteEncoder
+                .positionConversionFactor(2*math.pi)
+                .velocityConversionFactor(2*math.pi/60)
+                .inverted(True)
+                .zeroOffset(0.0424)
+    )
+    (
+        wristMotorConfig
+            .closedLoop
+                .pid(constants.kArmP, constants.kArmI, constants.kArmD)
+                .outputRange(-0.1, 0.1)
+                .setFeedbackSensor(rev.ClosedLoopConfig.FeedbackSensor.kAbsoluteEncoder)
+                .IZone(wpimath.units.degreesToRadians(15))
+    )
     wristMotor.configure(wristMotorConfig, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
-    
+
+    armOuterWheelMotorConfig = rev.SparkMaxConfig()
+    armInnerWheelMotorConfig = rev.SparkMaxConfig()
+    (
+        armOuterWheelMotorConfig
+            .inverted(True)
+            .setIdleMode(rev.SparkBaseConfig.IdleMode.kBrake)
+            .smartCurrentLimit(40)
+    )
+    (
+        armInnerWheelMotorConfig
+            .inverted(False)
+            .setIdleMode(rev.SparkBaseConfig.IdleMode.kBrake)
+            .smartCurrentLimit(40)
+    )
     armOuterWheelMotor.configure(armOuterWheelMotorConfig, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
     armInnerWheelMotor.configure(armInnerWheelMotorConfig, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
 
+    # Arm telemetry
+    wristAngleTopic = ntutil.getFloatTopic("/Wrist/Angle")
+    wristAngleRawTopic = ntutil.getFloatTopic("/Wrist/AngleRaw")
+    wristAngleSetpointTopic = ntutil.getFloatTopic("/Wrist/AngleSetpoint")
+    wristSafePositionTopic = ntutil.getFloatTopic("/Wrist/SafePosition")
+    wristFFTopic = ntutil.getFloatTopic("/Wrist/FF")
+
+    # do not delete
+    CalebIsProTopic = ntutil.getStringTopic("/CalebIsTheGoat")
+
+    # Control variables
+    elevatorSetpoint = 0
+    elevatorSetpointLimiter = SlewRateLimiter(1) #m/s
     wristPositionSetpoint = 0.0
 
     def periodic(self):
         slewedElevatorSetpoint = self.elevatorSetpointLimiter.calculate(self.elevatorSetpoint)
         self.elevatorController.setReference(slewedElevatorSetpoint, rev.SparkMax.ControlType.kPosition, arbFeedforward=0)
         
-        elevatorSetpointTopic.set(self.elevatorSetpoint)
-        elevatorSlewedSetpointTopic.set(slewedElevatorSetpoint)
-        elevatorHeightTopic.set(self.elevatorEncoder.getPosition())
-        
-        wristAngleTopic.set(wristEncoderToAngle(self.wristEncoder.getPosition()))
-        wristAngleRawTopic.set(self.wristEncoder.getPosition())
-        wristAngleSetpointTopic.set(self.wristPositionSetpoint)
+        self.elevatorSetpointTopic.set(self.elevatorSetpoint)
+        self.elevatorSlewedSetpointTopic.set(slewedElevatorSetpoint)
+        self.elevatorHeightTopic.set(self.elevatorEncoder.getPosition())
 
-        # # wristPTopic.set(self.newP)
-        # # wristITopic.set(self.newI)
-        # # wristDTopic.set(self.newD)
-
-        # # newPIDConfig = rev.SparkMaxConfig()
-        # # newPIDConfig.closedLoop.pid(self.newP, self.newI, self.newD)
-
-        # self.wristMotor.configure(newPIDConfig, rev.SparkMax.ResetMode.kNoResetSafeParameters, rev.SparkMax.PersistMode.kNoPersistParameters)
+        self.wristAngleTopic.set(wristEncoderToAngle(self.wristEncoder.getPosition()))
+        self.wristAngleRawTopic.set(self.wristEncoder.getPosition())
+        self.wristAngleSetpointTopic.set(self.wristPositionSetpoint)
 
         # Recalculate the new safe wrist position based on the current elevator height
         safeWristPosition = self.get_safe_wrist_position(self.wristPositionSetpoint)
-        wristSafePositionTopic.set(safeWristPosition)
-
         armFF = self.calculate_arm_ff()
-
-        wristFFPositionTopic.set(armFF)
-
         self.wristController.setReference(wristAngleToEncoder(safeWristPosition), rev.SparkMax.ControlType.kPosition, arbFeedforward=armFF)
 
-        pass
-
-    # def move_elevator(self, speed: float):
-    #     """
-    #     Manually control the elevator speed. Positive means up, negative means down.
-    #     """
-    #     self.elevatorMotor1.set(speed * 0.3)
-    #     # The other elevator motor is set as a follower.
+        self.wristSafePositionTopic.set(safeWristPosition)
+        self.wristFFTopic.set(armFF)
 
     def set_elevator_pid(self, p: float, i: float, d: float):
         """
         Set the elevator PID constants.
         """
         
-        elevatorMotor1Config.closedLoop.pid(p, i, d)
-        self.elevatorMotor1.configure(elevatorMotor1Config, rev.SparkMax.ResetMode.kNoResetSafeParameters, rev.SparkMax.PersistMode.kNoPersistParameters)
+        self.elevatorMotor1Config.closedLoop.pid(p, i, d)
+        self.elevatorMotor1.configure(self.elevatorMotor1Config, rev.SparkMax.ResetMode.kNoResetSafeParameters, rev.SparkMax.PersistMode.kNoPersistParameters)
 
-        elevatorPTopic.set(p)
-        elevatorITopic.set(i)
-        elevatorDTopic.set(d)
+        self.elevatorPTopic.set(p)
+        self.elevatorITopic.set(i)
+        self.elevatorDTopic.set(d)
 
     def set_elevator_position(self, setpoint: float):
         """
-        Set the elevator position in meters. The
-        setpoint is clamped to the range of heights allowed.
+        Set the elevator position in meters.
         """
         self.elevatorSetpoint = setpoint
-
 
     def move_coral(self, speed: float):
         """

@@ -5,19 +5,26 @@ from wpimath.kinematics import SwerveModuleState
 import wpimath.geometry
 from wpimath.geometry import Rotation2d
 
-primaryWheelMotorConfig = rev.SparkMaxConfig()
-primaryWheelMotorConfig.setIdleMode(primaryWheelMotorConfig.IdleMode(rev.SparkMax.IdleMode.kBrake))
-secondaryWheelMotorConfig = rev.SparkMaxConfig()
-secondaryWheelMotorConfig.setIdleMode(secondaryWheelMotorConfig.IdleMode(rev.SparkMax.IdleMode.kBrake))
-secondaryWheelMotorConfig.follow(51, invert=True)
-
 class SourceIntake:
+    # Hardware
     primaryWheelMotor = rev.SparkMax(51, rev.SparkLowLevel.MotorType.kBrushless)
     secondaryWheelMotor = rev.SparkMax(52, rev.SparkLowLevel.MotorType.kBrushless)
-    primaryWheelMotorConfig.smartCurrentLimit(20)
-    secondaryWheelMotorConfig.smartCurrentLimit(20)
-    secondaryWheelMotor.configure(secondaryWheelMotorConfig, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
+
+    primaryWheelMotorConfig = rev.SparkMaxConfig()
+    secondaryWheelMotorConfig = rev.SparkMaxConfig()
+    (
+        primaryWheelMotorConfig
+            .setIdleMode(rev.SparkBaseConfig.IdleMode.kBrake)
+            .smartCurrentLimit(20)
+    )
+    (
+        secondaryWheelMotorConfig
+            .setIdleMode(rev.SparkBaseConfig.IdleMode.kBrake)
+            .follow(51, invert=True)
+            .smartCurrentLimit(20)
+    )
     primaryWheelMotor.configure(primaryWheelMotorConfig, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
+    secondaryWheelMotor.configure(secondaryWheelMotorConfig, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
 
     def periodic(self):
         # TODO: Report encoder positions (and anything else) to NetworkTables

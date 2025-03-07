@@ -4,6 +4,7 @@ def lerp(a: float, b: float, t: float) -> float:
     return (1-t) * a + t * b
 
 def clamp(value: float, min: float, max: float) -> float:
+    assert min <= max, f"in utils.clamp: min ({min}) and max ({max}) are reversed"
     if value < min:
         return min
     elif value > max:

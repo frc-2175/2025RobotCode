@@ -15,26 +15,10 @@ from pathplannerlib.auto import AutoBuilder
 from pathplannerlib.controller import PPHolonomicDriveController
 from pathplannerlib.config import RobotConfig, PIDConstants
 from wpilib import DriverStation
-
-
-wheelDistanceFromCenter = constants.kWheelDistanceFromCenter
-frontLeftLocation = Translation2d(wheelDistanceFromCenter, wheelDistanceFromCenter)
-frontRightLocation = Translation2d(wheelDistanceFromCenter, -wheelDistanceFromCenter)
-backLeftLocation = Translation2d(-wheelDistanceFromCenter, wheelDistanceFromCenter)
-backRightLocation = Translation2d(-wheelDistanceFromCenter, -wheelDistanceFromCenter)
-
-kinematics = SwerveDrive4Kinematics(frontLeftLocation,frontRightLocation,backLeftLocation,backRightLocation)
-
-nt = ntcore.NetworkTableInstance.getDefault()
-desiredSwerveStatesTopic = nt.getStructArrayTopic("/DesiredSwerveStates", SwerveModuleState).publish()
-actualSwerveStatesTopic = nt.getStructArrayTopic("/ActualSwerveStates", SwerveModuleState).publish()
-desiredChassisSpeedsTopic = nt.getStructTopic("/DesiredChassisSpeeds", ChassisSpeeds).publish()
-currentChassisSpeedsTopic = nt.getStructTopic("/CurrentChassisSpeeds", ChassisSpeeds).publish()
-robotPoseTopic = nt.getStructTopic("/RobotPose", Pose2d).publish()
-
-gyroTopic = nt.getStructTopic("/Gyro", Rotation2d).publish()
+import ntutil
 
 class Drivetrain:
+    # Hardware
     frontLeftSwerveModule = SwerveModule(25, 21, 3 * math.pi/2)
     frontRightSwerveModule = SwerveModule(28, 22, 0)
     backLeftSwerveModule = SwerveModule(26, 24, math.pi)
@@ -42,12 +26,15 @@ class Drivetrain:
 
     gyro = navx.AHRS.create_spi()
 
-    speedLimiter = SlewRateLimiter(constants.kSpeedSlewRate) #m/s
-    rotationLimiter = SlewRateLimiter(constants.kRotationSlewRate) #rad/s
-    directionLimiter = RotationSlewRateLimiter(constants.kDirectionSlewRate) #rad/s
-
     desiredChassisSpeeds = ChassisSpeeds2175(0, 0, 0)
     currentChassisSpeeds = ChassisSpeeds2175(0, 0, 0)
+
+    # Kinematics and odometry
+    frontLeftLocation = Translation2d(constants.kWheelDistanceFromCenter, constants.kWheelDistanceFromCenter)
+    frontRightLocation = Translation2d(constants.kWheelDistanceFromCenter, -constants.kWheelDistanceFromCenter)
+    backLeftLocation = Translation2d(-constants.kWheelDistanceFromCenter, constants.kWheelDistanceFromCenter)
+    backRightLocation = Translation2d(-constants.kWheelDistanceFromCenter, -constants.kWheelDistanceFromCenter)
+    kinematics = SwerveDrive4Kinematics(frontLeftLocation, frontRightLocation, backLeftLocation, backRightLocation)
 
     odometry = SwerveDrive4Odometry(
         kinematics,
@@ -56,15 +43,28 @@ class Drivetrain:
             frontLeftSwerveModule.getPosition(),
             frontRightSwerveModule.getPosition(),
             backLeftSwerveModule.getPosition(),
-            backRightSwerveModule.getPosition()
+            backRightSwerveModule.getPosition(),
         ),
         # Initial pose of the robot, TODO, set from vision
         Pose2d(0, 0, gyro.getRotation2d())
     )
 
+    # Telemetry
+    desiredSwerveStatesTopic = ntutil.getStructArrayTopic("/SwerveStates/Desired", SwerveModuleState)
+    actualSwerveStatesTopic = ntutil.getStructArrayTopic("/SwerveStates/Actual", SwerveModuleState)
+    desiredChassisSpeedsTopic = ntutil.getStructTopic("/ChassisSpeeds/Desired", ChassisSpeeds)
+    currentChassisSpeedsTopic = ntutil.getStructTopic("/ChassisSpeeds/Current", ChassisSpeeds)
+    gyroTopic = ntutil.getStructTopic("/Gyro", Rotation2d)
+    robotPoseTopic = ntutil.getStructTopic("/RobotPose", Pose2d)
+
+    # Control variables
+    speedLimiter = SlewRateLimiter(constants.kSpeedSlewRate) #m/s
+    rotationLimiter = SlewRateLimiter(constants.kRotationSlewRate) #rad/s
+    directionLimiter = RotationSlewRateLimiter(constants.kDirectionSlewRate) #rad/s
+
     def __init__(self):
-        pass
         # Add PathPlanner or Choreo init here
+        pass
     
     def periodic(self):
         currentDirection = self.currentChassisSpeeds.direction
@@ -75,6 +75,7 @@ class Drivetrain:
 
         newDirection = None
         newSpeed = None
+        newTurnSpeed = self.rotationLimiter.calculate(self.desiredChassisSpeeds.omega)
 
         if currentSpeed == 0:
             newDirectionSlewRate = 500 # arbitarily huge number; effectively instantaneous
@@ -105,16 +106,12 @@ class Drivetrain:
             # Angle is very wrong. Decelerate and steer wheels to correct direction.
             newDirection = self.directionLimiter.calculate(desiredDirection)
             newSpeed = self.speedLimiter.calculate(0)
-
-        newTurnSpeed = self.rotationLimiter.calculate(self.desiredChassisSpeeds.omega)
-
         self.currentChassisSpeeds = ChassisSpeeds2175(newDirection, newSpeed, newTurnSpeed)
+        self.desiredChassisSpeedsTopic.set(self.desiredChassisSpeeds.toWPILibChassisSpeeds())
+        self.currentChassisSpeedsTopic.set(self.currentChassisSpeeds.toWPILibChassisSpeeds())
 
-        frontLeft, frontRight, backLeft, backRight = kinematics.toSwerveModuleStates(self.currentChassisSpeeds.toWPILibChassisSpeeds())
-        desiredSwerveStatesTopic.set([frontLeft,frontRight,backLeft,backRight])
-
-        desiredChassisSpeedsTopic.set(self.desiredChassisSpeeds.toWPILibChassisSpeeds())
-        currentChassisSpeedsTopic.set(self.currentChassisSpeeds.toWPILibChassisSpeeds())
+        frontLeft, frontRight, backLeft, backRight = self.kinematics.toSwerveModuleStates(self.currentChassisSpeeds.toWPILibChassisSpeeds())
+        self.desiredSwerveStatesTopic.set([frontLeft, frontRight, backLeft, backRight])
 
         self.frontLeftSwerveModule.setState(frontLeft)
         self.frontRightSwerveModule.setState(frontRight)
@@ -125,9 +122,9 @@ class Drivetrain:
         actualFrontRight = self.frontRightSwerveModule.getState()
         actualBackLeft = self.backLeftSwerveModule.getState()
         actualBackRight = self.backRightSwerveModule.getState()
-        actualSwerveStatesTopic.set([actualFrontLeft,actualFrontRight,actualBackLeft,actualBackRight])
+        self.actualSwerveStatesTopic.set([actualFrontLeft, actualFrontRight, actualBackLeft, actualBackRight])
 
-        gyroTopic.set(self.gyro.getRotation2d())
+        self.gyroTopic.set(self.gyro.getRotation2d())
 
         self.odometry.update(
             self.gyro.getRotation2d(),
@@ -139,9 +136,10 @@ class Drivetrain:
             )
         )
 
-        robotPoseTopic.set(self.odometry.getPose())
+        self.robotPoseTopic.set(self.odometry.getPose())
 
     def reset_pose(self):
+        # TODO
         pass
 
     def get_pose(self) -> Pose2d:
@@ -149,18 +147,20 @@ class Drivetrain:
 
     def get_heading(self) -> Rotation2d:
         return self.gyro.getRotation2d()
-    
-    def get_wpi_chassis_speeds(self) -> ChassisSpeeds:
-        return self.currentChassisSpeeds.toWPILibChassisSpeeds()
 
     def drive(self, xSpeed: float, ySpeed: float, turnSpeed: float):
         newSpeeds = ChassisSpeeds2175.fromFieldRelativeSpeeds(xSpeed, ySpeed, turnSpeed, self.gyro.getRotation2d())
-        # The speeds will actually be zero because these are the products of the deadbanded joystick values
+
+        # If stopping the robot, preserve the old direction instead of going to
+        # angle 0. The speeds will indeed be exactly equal to zero in teleop
+        # because xSpeed and ySpeed are the deadbanded joystick values.
         if xSpeed == 0 and ySpeed == 0:
-            # Preserve the old direction instead of going to angle 0.
             newSpeeds.direction = self.currentChassisSpeeds.direction
-        if newSpeeds.speed > constants.kMaxSpeed: 
+
+        # Limit the overall max speed.
+        if newSpeeds.speed > constants.kMaxSpeed:
             newSpeeds.speed = constants.kMaxSpeed
+
         self.desiredChassisSpeeds = newSpeeds
 
     def reset_heading(self):
