@@ -11,13 +11,20 @@ from swervemodule import SwerveModule
 import utils
 from utils import RotationSlewRateLimiter
 from chassisspeeds import ChassisSpeeds2175
+from pathplannerlib.auto import AutoBuilder
+from pathplannerlib.controller import PPHolonomicDriveController
+from pathplannerlib.config import RobotConfig, PIDConstants
+from wpilib import DriverStation
 
-wheelDistanceFromCenter = wpimath.units.inchesToMeters(12.375)
+
+wheelDistanceFromCenter = constants.kWheelDistanceFromCenter
 frontLeftLocation = Translation2d(wheelDistanceFromCenter, wheelDistanceFromCenter)
 frontRightLocation = Translation2d(wheelDistanceFromCenter, -wheelDistanceFromCenter)
 backLeftLocation = Translation2d(-wheelDistanceFromCenter, wheelDistanceFromCenter)
 backRightLocation = Translation2d(-wheelDistanceFromCenter, -wheelDistanceFromCenter)
+
 kinematics = SwerveDrive4Kinematics(frontLeftLocation,frontRightLocation,backLeftLocation,backRightLocation)
+
 nt = ntcore.NetworkTableInstance.getDefault()
 desiredSwerveStatesTopic = nt.getStructArrayTopic("/DesiredSwerveStates", SwerveModuleState).publish()
 actualSwerveStatesTopic = nt.getStructArrayTopic("/ActualSwerveStates", SwerveModuleState).publish()
@@ -28,7 +35,7 @@ robotPoseTopic = nt.getStructTopic("/RobotPose", Pose2d).publish()
 gyroTopic = nt.getStructTopic("/Gyro", Rotation2d).publish()
 
 class Drivetrain:
-    frontLeftSwerveModule = SwerveModule(25, 21, 3*math.pi/2)
+    frontLeftSwerveModule = SwerveModule(25, 21, 3 * math.pi/2)
     frontRightSwerveModule = SwerveModule(28, 22, 0)
     backLeftSwerveModule = SwerveModule(26, 24, math.pi)
     backRightSwerveModule = SwerveModule(27, 23, math.pi/2)
@@ -51,8 +58,13 @@ class Drivetrain:
             backLeftSwerveModule.getPosition(),
             backRightSwerveModule.getPosition()
         ),
+        # Initial pose of the robot, TODO, set from vision
         Pose2d(0, 0, gyro.getRotation2d())
     )
+
+    def __init__(self):
+        pass
+        # Add PathPlanner or Choreo init here
     
     def periodic(self):
         currentDirection = self.currentChassisSpeeds.direction
@@ -129,9 +141,21 @@ class Drivetrain:
 
         robotPoseTopic.set(self.odometry.getPose())
 
+    def reset_pose(self):
+        pass
+
+    def get_pose(self) -> Pose2d:
+        return self.odometry.getPose()
+
+    def get_heading(self) -> Rotation2d:
+        return self.gyro.getRotation2d()
+    
+    def get_wpi_chassis_speeds(self) -> ChassisSpeeds:
+        return self.currentChassisSpeeds.toWPILibChassisSpeeds()
 
     def drive(self, xSpeed: float, ySpeed: float, turnSpeed: float):
         newSpeeds = ChassisSpeeds2175.fromFieldRelativeSpeeds(xSpeed, ySpeed, turnSpeed, self.gyro.getRotation2d())
+        # The speeds will actually be zero because these are the products of the deadbanded joystick values
         if xSpeed == 0 and ySpeed == 0:
             # Preserve the old direction instead of going to angle 0.
             newSpeeds.direction = self.currentChassisSpeeds.direction
