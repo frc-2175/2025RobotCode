@@ -135,6 +135,8 @@ class Drivetrain:
         if xSpeed == 0 and ySpeed == 0:
             # Preserve the old direction instead of going to angle 0.
             newSpeeds.direction = self.currentChassisSpeeds.direction
+        if newSpeeds.speed > constants.kMaxSpeed: 
+            newSpeeds.speed = constants.kMaxSpeed
         self.desiredChassisSpeeds = newSpeeds
 
     def reset_heading(self):
