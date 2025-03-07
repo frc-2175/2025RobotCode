@@ -10,6 +10,7 @@ import ntcore
 import wpimath.units
 import constants
 import utils
+from wpimath.filter import SlewRateLimiter
 
 def wristEncoderToAngle(encoderPosition: float) -> float:
     return encoderPosition - constants.kWristAngleOffset
@@ -66,6 +67,7 @@ elevatorITopic = nt.getFloatTopic("/ElevatorI").publish()
 elevatorDTopic = nt.getFloatTopic("/ElevatorD").publish()
 
 elevatorSetpointTopic = nt.getFloatTopic("/ElevatorSetpoint").publish()
+elevatorSlewedSetpointTopic = nt.getFloatTopic("/ElevatorSlewedSetpoint").publish()
 
 CalebIsProTopic = nt.getStringTopic("/CalebIsTheGoat").publish()
 
@@ -87,6 +89,9 @@ class ElevatorAndArm:
     elevatorMotor1Config.smartCurrentLimit(constants.kElevatorCurrentLimit)
 
     elevatorMotor1.configure(elevatorMotor1Config, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
+
+    elevatorSetpoint = 0
+    elevatorSetpointLimiter = SlewRateLimiter(1)
 
     # Arm hardware
     wristMotor = rev.SparkMax(41, rev.SparkLowLevel.MotorType.kBrushless)
@@ -111,7 +116,13 @@ class ElevatorAndArm:
     wristPositionSetpoint = 0.0
 
     def periodic(self):
+        slewedElevatorSetpoint = self.elevatorSetpointLimiter.calculate(self.elevatorSetpoint)
+        self.elevatorController.setReference(slewedElevatorSetpoint, rev.SparkMax.ControlType.kPosition, arbFeedforward=0)
+        
+        elevatorSetpointTopic.set(self.elevatorSetpoint)
+        elevatorSlewedSetpointTopic.set(slewedElevatorSetpoint)
         elevatorHeightTopic.set(self.elevatorEncoder.getPosition())
+        
         wristAngleTopic.set(wristEncoderToAngle(self.wristEncoder.getPosition()))
         wristAngleRawTopic.set(self.wristEncoder.getPosition())
         wristAngleSetpointTopic.set(self.wristPositionSetpoint)
@@ -161,11 +172,7 @@ class ElevatorAndArm:
         Set the elevator position in meters. The
         setpoint is clamped to the range of heights allowed.
         """
-
-        self.elevatorController.setReference(setpoint, rev.SparkMax.ControlType.kPosition, arbFeedforward=0)
-        
-        elevatorSetpointTopic.set(setpoint)
-        pass
+        self.elevatorSetpoint = setpoint
 
 
     def move_coral(self, speed: float):
