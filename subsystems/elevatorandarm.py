@@ -78,7 +78,7 @@ class ElevatorAndArm:
     wristMotorConfig = rev.SparkMaxConfig()
     (
         wristMotorConfig
-            .inverted(True)
+            .inverted(False)
             .setIdleMode(rev.SparkBaseConfig.IdleMode.kBrake)
             .smartCurrentLimit(40)
     )
