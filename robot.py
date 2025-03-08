@@ -107,7 +107,6 @@ class MyRobot(wpilib.TimedRobot):
                 self.elevatorandarm.move_algae(-gamePieceSpeed)
             else:
                 print(f"Variable algaeReverse improper value: {self.algaeReverse}; expected True or False")
-            
-            self.sourceintake.run_intake(0)
+
         else:
             print(f"Variable scoringMode improper value: {self.scoringMode}; expected Coral or Algae")
