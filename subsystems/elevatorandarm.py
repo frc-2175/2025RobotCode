@@ -21,9 +21,8 @@ def wristAngleToEncoder(angleRadians: float) -> float:
 
 class ElevatorAndArm:
     # Elevator hardware
-    elevatorMotor1 = rev.SparkMax(32, rev.SparkLowLevel.MotorType.kBrushless) #Left motor from robot POV
-    #elevatorMotor2 = rev.SparkMax(32, rev.SparkLowLevel.MotorType.kBrushless) #Right motor from robot POV
-    #elevatorMotor2.configure(elevatorMotor2Config, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
+    elevatorMotor1 = rev.SparkMax(31, rev.SparkLowLevel.MotorType.kBrushless) #Left motor from robot POV
+    elevatorMotor2 = rev.SparkMax(32, rev.SparkLowLevel.MotorType.kBrushless) #Right motor from robot POV
 
     elevatorEncoder = elevatorMotor1.getEncoder()
     elevatorController = elevatorMotor1.getClosedLoopController()
@@ -31,7 +30,6 @@ class ElevatorAndArm:
     elevatorMotor1Config = rev.SparkMaxConfig()
     (
         elevatorMotor1Config
-            .inverted(True)
             .setIdleMode(rev.SparkBaseConfig.IdleMode.kBrake)
             .smartCurrentLimit(constants.kElevatorCurrentLimit)
     )
@@ -58,6 +56,13 @@ class ElevatorAndArm:
                 .IZone(wpimath.units.inchesToMeters(3))
     )
     elevatorMotor1.configure(elevatorMotor1Config, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
+    
+    elevatorMotor2Config = rev.SparkMaxConfig()
+    (
+        elevatorMotor2Config
+            .follow(31, True)
+    )
+    elevatorMotor2.configure(elevatorMotor2Config, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
 
     # Elevator telemetry
     elevatorHeightTopic = ntutil.getFloatTopic("/Elevator/Height")
