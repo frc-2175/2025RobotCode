@@ -1,39 +1,16 @@
 import rev
 import math
+import ntutil
+import wpilib
 import constants
 from wpimath.kinematics import SwerveModuleState
 import wpimath.geometry
 from wpimath.geometry import Rotation2d
 
 class SourceIntake:
-    # Hardware
-    primaryWheelMotor = rev.SparkMax(51, rev.SparkLowLevel.MotorType.kBrushless)
-    secondaryWheelMotor = rev.SparkMax(52, rev.SparkLowLevel.MotorType.kBrushless)
-
-    primaryWheelMotorConfig = rev.SparkMaxConfig()
-    secondaryWheelMotorConfig = rev.SparkMaxConfig()
-    (
-        primaryWheelMotorConfig
-            .setIdleMode(rev.SparkBaseConfig.IdleMode.kBrake)
-            .smartCurrentLimit(20)
-    )
-    (
-        secondaryWheelMotorConfig
-            .setIdleMode(rev.SparkBaseConfig.IdleMode.kBrake)
-            .follow(51, invert=True)
-            .smartCurrentLimit(20)
-    )
-    primaryWheelMotor.configure(primaryWheelMotorConfig, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
-    secondaryWheelMotor.configure(secondaryWheelMotorConfig, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
-
+    intakeSensor = wpilib.AnalogInput(0)
+    # Telemetry
+    intakeSensorTopic = ntutil.getFloatTopic("/Intake/Sensor")
     def periodic(self):
-        # TODO: Report encoder positions (and anything else) to NetworkTables
-        pass
-
-    def run_intake(self, speed: float):
-        """
-        Positive means moving coral from the funnel through to the arm. Negative is the reverse.
-        Valid speeds range from -1 to 1.
-        """
-        self.primaryWheelMotor.set(speed * constants.kSourceIntakeSpeed)
+        self.intakeSensorTopic.set(self.intakeSensor.getVoltage())
         pass

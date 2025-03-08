@@ -84,11 +84,6 @@ class MyRobot(wpilib.TimedRobot):
             coralSpeed = wpimath.applyDeadband(gamePieceSpeed, 0.2)
             self.elevatorandarm.move_coral(coralSpeed)
 
-            if self.elevatorandarm.get_elevator_position() <= constants.kSourceIntakeElevatorMaxHeight and self.elevatorandarm.get_wrist_position() >= constants.kSourceIntakeWristMinAngle:
-                self.sourceintake.run_intake(coralSpeed)
-            else:
-                self.sourceintake.run_intake(0)
-
         elif self.scoringMode == 1:
             if self.gamePad.getAButton():
                 self.elevatorandarm.set_wrist_position(constants.kWristAlgaeGround)
