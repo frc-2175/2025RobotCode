@@ -49,7 +49,7 @@ kElevatorL4 = wpimath.units.inchesToMeters(52)
 kElevatorAlgaeGround = wpimath.units.inchesToMeters(15.8)
 kElevatorAlgaeLow = wpimath.units.inchesToMeters(36)
 kElevatorAlgaeHigh = wpimath.units.inchesToMeters(50)
-
+kElevatorBaseHeight = wpimath.units.inchesToMeters(6)
 # Arm safety constraints, specified in range allowed when elevator is above n meters
 # (constraintMinElevHeight, constraintMaxElevHeight): (minAngle, maxAngle)
 kArmSafetyConstraints = {
@@ -73,6 +73,8 @@ kMaxWristAngle = -0.7 #rad
 kWristMotorReduction = (1 / 20) * (18 / 22)
 kSquishyWheelCoralSpeed = 0.2
 kSquishyWheelAlgaeSpeed = 0.4
+kArmHeightInCarriage = wpimath.units.inchesToMeters(5.5)
+kArmCoralRadius = wpimath.units.inchesToMeters(16)
 
 #Arm Angle Presets
 kWristUprightAngle = wpimath.units.degreesToRadians(0) #rad

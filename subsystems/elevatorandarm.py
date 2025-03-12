@@ -60,6 +60,7 @@ class ElevatorAndArm:
     elevatorMotor2Config = rev.SparkMaxConfig()
     (
         elevatorMotor2Config
+            .smartCurrentLimit(constants.kElevatorCurrentLimit)
             .follow(31, True)
     )
     elevatorMotor2.configure(elevatorMotor2Config, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
@@ -169,11 +170,9 @@ class ElevatorAndArm:
         self.elevatorITopic.set(i)
         self.elevatorDTopic.set(d)
 
-    def set_elevator_position(self, setpoint: float):
-        """
-        Set the elevator position in meters.
-        """
-        self.elevatorSetpoint = setpoint
+    def set_arm_position(self, height: float, angle: float):
+        self.wristPositionSetpoint = angle
+        self.elevatorSetpoint = self.compute_elevator_height(height,angle)
 
     def move_coral(self, speed: float):
         """
@@ -224,14 +223,6 @@ class ElevatorAndArm:
             # TODO: Replace this with a proper logging solution that goes to AdvantageScope
             print("ERROR! We should not have a gap in our arm angle limits!")
             return constants.kArmAlwaysSafeAngle
-    
-    def set_wrist_position(self, setpoint: float):
-        """
-        Set the wrist position in radians. The setpoint is clamped to the range of angles
-        allowed for the current elevator height. If the elevator height is outside all ranges,
-        the always safe angle is used.
-        """
-        self.wristPositionSetpoint = setpoint
 
     def calculate_arm_ff(self):
         """
@@ -247,5 +238,5 @@ class ElevatorAndArm:
 
         return ffVoltage
 
-
-    
+    def compute_elevator_height(self, armHeight, angle):
+        return armHeight - constants.kArmHeightInCarriage - constants.kElevatorBaseHeight - constants.kArmCoralRadius * math.cos(angle)
