@@ -170,9 +170,16 @@ class ElevatorAndArm:
         self.elevatorITopic.set(i)
         self.elevatorDTopic.set(d)
 
-    def set_arm_position(self, height: float, angle: float):
+    def set_arm_position(self, height: float, angle: float, mode: int):
         self.wristPositionSetpoint = angle
-        self.elevatorSetpoint = self.compute_elevator_height(height,angle)
+        radius = None
+        if mode == constants.kCoralMode:
+            radius = constants.kArmCoralRadius
+        elif mode == constants.kAlgaeMode:
+            radius = constants.kArmAlgaeRadius
+        else:
+            print("ERROR! Unknown mode!")
+        self.elevatorSetpoint = self.compute_elevator_height(height, angle, radius)
 
     def move_coral(self, speed: float):
         """
@@ -238,5 +245,5 @@ class ElevatorAndArm:
 
         return ffVoltage
 
-    def compute_elevator_height(self, armHeight, angle):
-        return armHeight - constants.kArmHeightInCarriage - constants.kElevatorBaseHeight - constants.kArmCoralRadius * math.cos(angle)
+    def compute_elevator_height(self, armHeight, angle, radius):
+        return armHeight - constants.kArmHeightInCarriage - constants.kElevatorBaseHeight - radius * math.cos(angle)

@@ -1,6 +1,9 @@
 import math
 import wpimath.units
 
+kCoralMode = 0
+kAlgaeMode = 1
+
 # Drivetrain
 kWheelDiameter = wpimath.units.inchesToMeters(3)
 kDriveMotorReduction = (45 * 22) /(13*15)
@@ -46,9 +49,9 @@ kElevatorL2 = wpimath.units.inchesToMeters(31.5)
 kElevatorL3 = wpimath.units.inchesToMeters(47.5)
 kElevatorL4 = wpimath.units.inchesToMeters(72)
 
-kElevatorAlgaeGround = wpimath.units.inchesToMeters(15.8)
-kElevatorAlgaeLow = wpimath.units.inchesToMeters(36)
-kElevatorAlgaeHigh = wpimath.units.inchesToMeters(50)
+kElevatorAlgaeGround = wpimath.units.inchesToMeters(14)
+kElevatorAlgaeLow = wpimath.units.inchesToMeters(42)
+kElevatorAlgaeHigh = wpimath.units.inchesToMeters(46)
 kElevatorBaseHeight = wpimath.units.inchesToMeters(6)
 # Arm safety constraints, specified in range allowed when elevator is above n meters
 # (constraintMinElevHeight, constraintMaxElevHeight): (minAngle, maxAngle)
@@ -75,6 +78,7 @@ kSquishyWheelCoralSpeed = 0.2
 kSquishyWheelAlgaeSpeed = 0.4
 kArmHeightInCarriage = wpimath.units.inchesToMeters(5.5)
 kArmCoralRadius = wpimath.units.inchesToMeters(16)
+kArmAlgaeRadius = wpimath.units.inchesToMeters(21.5)
 
 #Arm Angle Presets
 kWristUprightAngle = wpimath.units.degreesToRadians(-5) #rad

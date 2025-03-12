@@ -26,13 +26,13 @@ class MyRobot(wpilib.TimedRobot):
     elevatorandarm = ElevatorAndArm()
     hanger = Hanger()
 
-    scoringMode = 0
+    scoringMode = constants.kCoralMode
     algaeReverse = False
 
     def robotInit(self):
         # wpilib.DataLogManager.start()
         # URCL.start()
-        self.elevatorandarm.set_arm_position(constants.kElevatorL1, constants.kWristUprightAngle)
+        self.elevatorandarm.set_arm_position(constants.kElevatorL1, constants.kWristUprightAngle, constants.kCoralMode)
         pass
     
     def robotPeriodic(self):
@@ -59,37 +59,37 @@ class MyRobot(wpilib.TimedRobot):
         gamePieceSpeed = self.gamePad.getRightTriggerAxis()-self.gamePad.getLeftTriggerAxis()
 
         if self.gamePad.getRightBumper():
-            self.scoringMode = 0
+            self.scoringMode = constants.kCoralMode
 
         if self.gamePad.getLeftBumper():
-            self.scoringMode = 1
+            self.scoringMode = constants.kAlgaeMode
         
-        if self.scoringMode == 0:
+        if self.scoringMode == constants.kCoralMode:
             if self.gamePad.getAButton():
                 #Set Elevator to L1/Handoff Height
-                self.elevatorandarm.set_arm_position(constants.kElevatorL1, constants.kWristUprightAngle)
+                self.elevatorandarm.set_arm_position(constants.kElevatorL1, constants.kWristUprightAngle, constants.kCoralMode)
             elif self.gamePad.getBButton():
                 #Set Elevator to L2 Height
-                self.elevatorandarm.set_arm_position(constants.kElevatorL2, constants.kWristCoralScoreAngle)
+                self.elevatorandarm.set_arm_position(constants.kElevatorL2, constants.kWristCoralScoreAngle, constants.kCoralMode)
             elif self.gamePad.getXButton():
                 #Set Elevator to L3 Height
-                self.elevatorandarm.set_arm_position(constants.kElevatorL3, constants.kWristCoralScoreAngle)
+                self.elevatorandarm.set_arm_position(constants.kElevatorL3, constants.kWristCoralScoreAngle, constants.kCoralMode)
             elif self.gamePad.getYButton():
                 #Set Elevator to L4 Height
-                self.elevatorandarm.set_arm_position(constants.kElevatorL4, constants.kWristHighCoralScoreAngle)
+                self.elevatorandarm.set_arm_position(constants.kElevatorL4, constants.kWristHighCoralScoreAngle, constants.kCoralMode)
 
             coralSpeed = wpimath.applyDeadband(gamePieceSpeed, 0.2)
             self.elevatorandarm.move_coral(coralSpeed)
 
-        elif self.scoringMode == 1:
+        elif self.scoringMode == constants.kAlgaeMode:
             if self.gamePad.getAButton():
-                self.elevatorandarm.set_arm_position(constants.kElevatorAlgaeGround, constants.kWristAlgaeGround)
+                self.elevatorandarm.set_arm_position(constants.kElevatorAlgaeGround, constants.kWristAlgaeGround, constants.kAlgaeMode)
                 self.algaeReverse = False
             elif self.gamePad.getXButton() or self.gamePad.getBButton():
                 self.algaeReverse = False
-                self.elevatorandarm.set_arm_position(constants.kElevatorAlgaeLow, constants.kWristAlgaeDereef)
+                self.elevatorandarm.set_arm_position(constants.kElevatorAlgaeLow, constants.kWristAlgaeDereef, constants.kAlgaeMode)
             elif self.gamePad.getYButton():
-                self.elevatorandarm.set_arm_position(constants.kElevatorAlgaeHigh, constants.kWristAlgaeDereef)
+                self.elevatorandarm.set_arm_position(constants.kElevatorAlgaeHigh, constants.kWristAlgaeDereef, constants.kAlgaeMode)
                 self.algaeReverse = True
             
             if self.algaeReverse == True:
