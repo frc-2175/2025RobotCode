@@ -51,7 +51,7 @@ class ElevatorAndArm:
         elevatorMotor1Config
             .closedLoop
                 .pid(constants.kElevatorP, constants.kElevatorI, constants.kElevatorD)
-                .outputRange(-0.6, 0.6)
+                .outputRange(-0.8, 0.8)
                 .setFeedbackSensor(rev.ClosedLoopConfig.FeedbackSensor.kPrimaryEncoder)
                 .IZone(wpimath.units.inchesToMeters(3))
     )
@@ -100,9 +100,9 @@ class ElevatorAndArm:
         wristMotorConfig
             .closedLoop
                 .pid(constants.kArmP, constants.kArmI, constants.kArmD)
-                .outputRange(-0.1, 0.1)
+                .outputRange(-0.175, 0.175)
                 .setFeedbackSensor(rev.ClosedLoopConfig.FeedbackSensor.kAbsoluteEncoder)
-                .IZone(wpimath.units.degreesToRadians(15))
+                .IZone(wpimath.units.degreesToRadians(10))
     )
     wristMotor.configure(wristMotorConfig, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
 

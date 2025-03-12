@@ -19,7 +19,7 @@ kRotationSlewRate = 2.0 * kMaxTurnSpeed # m/s
 
 # Elevator
 kMaxElevatorSpeed = wpimath.units.inchesToMeters(9) # m/s
-kMinElevatorHeight = wpimath.units.inchesToMeters(1) # m
+kMinElevatorHeight = wpimath.units.inchesToMeters(0.1) # m
 kMaxElevatorHeight = wpimath.units.inchesToMeters((4 * 12) + 2) # m
 # Pitch diameter for the WCP 18 tooth sprocket is 1.432 inches
 kElevatorSprocketDiameter = wpimath.units.inchesToMeters(1.432)
@@ -27,7 +27,7 @@ kElevatorMotorReduction = (1 / 20)
 
 kElevatorCurrentLimit = 40
 
-kElevatorP = 3
+kElevatorP = 7.5
 kElevatorI = 0
 kElevatorD = 0
 
@@ -41,10 +41,10 @@ kElevatorKV = 10.72 #V*m/s
 kElevatorKA = 0.01 #V*m^2/s^2
 
 #Elevator Presets
-kElevatorL1 = wpimath.units.inchesToMeters(3.94)
-kElevatorL2 = wpimath.units.inchesToMeters(10.75)
-kElevatorL3 = wpimath.units.inchesToMeters(27.14)
-kElevatorL4 = wpimath.units.inchesToMeters(52)
+kElevatorL1 = wpimath.units.inchesToMeters(27)
+kElevatorL2 = wpimath.units.inchesToMeters(31.5)
+kElevatorL3 = wpimath.units.inchesToMeters(47.5)
+kElevatorL4 = wpimath.units.inchesToMeters(72)
 
 kElevatorAlgaeGround = wpimath.units.inchesToMeters(15.8)
 kElevatorAlgaeLow = wpimath.units.inchesToMeters(36)
@@ -77,8 +77,9 @@ kArmHeightInCarriage = wpimath.units.inchesToMeters(5.5)
 kArmCoralRadius = wpimath.units.inchesToMeters(16)
 
 #Arm Angle Presets
-kWristUprightAngle = wpimath.units.degreesToRadians(0) #rad
+kWristUprightAngle = wpimath.units.degreesToRadians(-5) #rad
 kWristCoralScoreAngle = wpimath.units.degreesToRadians(-30) #rad
+kWristHighCoralScoreAngle = wpimath.units.degreesToRadians(-45)
 kWristAlgaeDereef = wpimath.units.degreesToRadians(-110) #rad
 kWristAlgaeGround = wpimath.units.degreesToRadians(-130) #rad
 
@@ -89,8 +90,8 @@ kArmKG = 0.47 #V
 kArmKV = 0.49 #V*s/rad
 kArmKA = 0.01 #V*s^2/rad
 
-kArmP = 0.133
-kArmI = 0.0002
+kArmP = 0.3
+kArmI = 0.0004
 kArmD = 0
 
 #Source Intake
