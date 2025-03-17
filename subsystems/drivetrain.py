@@ -18,54 +18,52 @@ from wpilib import DriverStation
 import ntutil
 
 class Drivetrain:
-    # Hardware
-    frontLeftSwerveModule = SwerveModule(25, 21, 3 * math.pi/2)
-    frontRightSwerveModule = SwerveModule(28, 22, 0)
-    backLeftSwerveModule = SwerveModule(26, 24, math.pi)
-    backRightSwerveModule = SwerveModule(27, 23, math.pi/2)
-
-    gyro = navx.AHRS.create_spi()
-
-    desiredChassisSpeeds = ChassisSpeeds2175(0, 0, 0)
-    currentChassisSpeeds = ChassisSpeeds2175(0, 0, 0)
-
-    # Kinematics and odometry
-    frontLeftLocation = Translation2d(constants.kWheelDistanceFromCenter, constants.kWheelDistanceFromCenter)
-    frontRightLocation = Translation2d(constants.kWheelDistanceFromCenter, -constants.kWheelDistanceFromCenter)
-    backLeftLocation = Translation2d(-constants.kWheelDistanceFromCenter, constants.kWheelDistanceFromCenter)
-    backRightLocation = Translation2d(-constants.kWheelDistanceFromCenter, -constants.kWheelDistanceFromCenter)
-    kinematics = SwerveDrive4Kinematics(frontLeftLocation, frontRightLocation, backLeftLocation, backRightLocation)
-
-    odometry = SwerveDrive4Odometry(
-        kinematics,
-        gyro.getRotation2d(),
-        (
-            frontLeftSwerveModule.getPosition(),
-            frontRightSwerveModule.getPosition(),
-            backLeftSwerveModule.getPosition(),
-            backRightSwerveModule.getPosition(),
-        ),
-        # Initial pose of the robot, TODO, set from vision
-        Pose2d(0, 0, gyro.getRotation2d())
-    )
-
-    # Telemetry
-    desiredSwerveStatesTopic = ntutil.getStructArrayTopic("/SwerveStates/Desired", SwerveModuleState)
-    actualSwerveStatesTopic = ntutil.getStructArrayTopic("/SwerveStates/Actual", SwerveModuleState)
-    desiredChassisSpeedsTopic = ntutil.getStructTopic("/ChassisSpeeds/Desired", ChassisSpeeds)
-    currentChassisSpeedsTopic = ntutil.getStructTopic("/ChassisSpeeds/Current", ChassisSpeeds)
-    gyroTopic = ntutil.getStructTopic("/Gyro", Rotation2d)
-    robotPoseTopic = ntutil.getStructTopic("/RobotPose", Pose2d)
-
-    # Control variables
-    speedLimiter = SlewRateLimiter(constants.kSpeedSlewRate) #m/s
-    rotationLimiter = SlewRateLimiter(constants.kRotationSlewRate) #rad/s
-    directionLimiter = RotationSlewRateLimiter(constants.kDirectionSlewRate) #rad/s
-
     def __init__(self):
-        # Add PathPlanner or Choreo init here
-        pass
-    
+        # Hardware
+        self.frontLeftSwerveModule = SwerveModule(25, 21, 3 * math.pi/2)
+        self.frontRightSwerveModule = SwerveModule(28, 22, 0)
+        self.backLeftSwerveModule = SwerveModule(26, 24, math.pi)
+        self.backRightSwerveModule = SwerveModule(27, 23, math.pi/2)
+
+        self.gyro = navx.AHRS.create_spi()
+
+        self.desiredChassisSpeeds = ChassisSpeeds2175(0, 0, 0)
+        self.currentChassisSpeeds = ChassisSpeeds2175(0, 0, 0)
+
+        # Kinematics and odometry
+        frontLeftLocation = Translation2d(constants.kWheelDistanceFromCenter, constants.kWheelDistanceFromCenter)
+        frontRightLocation = Translation2d(constants.kWheelDistanceFromCenter, -constants.kWheelDistanceFromCenter)
+        backLeftLocation = Translation2d(-constants.kWheelDistanceFromCenter, constants.kWheelDistanceFromCenter)
+        backRightLocation = Translation2d(-constants.kWheelDistanceFromCenter, -constants.kWheelDistanceFromCenter)
+        self.kinematics = SwerveDrive4Kinematics(frontLeftLocation, frontRightLocation, backLeftLocation, backRightLocation)
+
+        self.odometry = SwerveDrive4Odometry(
+            self.kinematics,
+            self.gyro.getRotation2d(),
+            (
+                self.frontLeftSwerveModule.getPosition(),
+                self.frontRightSwerveModule.getPosition(),
+                self.backLeftSwerveModule.getPosition(),
+                self.backRightSwerveModule.getPosition(),
+            ),
+            # Initial pose of the robot, TODO, set from vision
+            Pose2d(0, 0, self.gyro.getRotation2d())
+        )
+
+        # Telemetry
+        self.desiredSwerveStatesTopic = ntutil.getStructArrayTopic("/SwerveStates/Desired", SwerveModuleState)
+        self.actualSwerveStatesTopic = ntutil.getStructArrayTopic("/SwerveStates/Actual", SwerveModuleState)
+        self.desiredChassisSpeedsTopic = ntutil.getStructTopic("/ChassisSpeeds/Desired", ChassisSpeeds)
+        self.currentChassisSpeedsTopic = ntutil.getStructTopic("/ChassisSpeeds/Current", ChassisSpeeds)
+        self.gyroTopic = ntutil.getStructTopic("/Gyro", Rotation2d)
+        self.robotPoseTopic = ntutil.getStructTopic("/RobotPose", Pose2d)
+
+        # Control variables
+        self.speedLimiter = SlewRateLimiter(constants.kSpeedSlewRate) #m/s
+        self.rotationLimiter = SlewRateLimiter(constants.kRotationSlewRate) #rad/s
+        self.directionLimiter = RotationSlewRateLimiter(constants.kDirectionSlewRate) #rad/s
+
+
     def periodic(self):
         currentDirection = self.currentChassisSpeeds.direction
         currentSpeed = self.currentChassisSpeeds.speed

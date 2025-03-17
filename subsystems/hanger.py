@@ -9,45 +9,46 @@ import utils
 import constants
 
 class Hanger:
-    # Hardware
-    hangerMotor = rev.SparkMax(61, rev.SparkLowLevel.MotorType.kBrushless)
-    hangerController = hangerMotor.getClosedLoopController()
-    # hangerEncoder = hangerMotor.getAbsoluteEncoder()
-    hangerEncoder = hangerMotor.getEncoder()
+    def __init__(self):
+        # Hardware
+        self.hangerMotor = rev.SparkMax(61, rev.SparkLowLevel.MotorType.kBrushless)
+        self.hangerController = self.hangerMotor.getClosedLoopController()
+        # self.hangerEncoder = self.hangerMotor.getAbsoluteEncoder()
+        self.hangerEncoder = self.hangerMotor.getEncoder()
 
-    hangerMotorConfig = rev.SparkMaxConfig()
-    (
-        hangerMotorConfig
-            .setIdleMode(rev.SparkBaseConfig.IdleMode.kBrake)
-            .smartCurrentLimit(40)
-    )
-    (
-        hangerMotorConfig
-            .closedLoop
-                .pid(0.1, 0, 0)
-                .setFeedbackSensor(rev.ClosedLoopConfig.FeedbackSensor.kAbsoluteEncoder)
-    )
-    (
-        hangerMotorConfig
-            .encoder
-                .positionConversionFactor(constants.kHangerMotorReduction * math.pi * 2)
-    )
-    (
-        hangerMotorConfig
-            .absoluteEncoder
-                .positionConversionFactor(math.pi * 2)
-                .zeroCentered(True)
-    )
-    hangerMotor.configure(hangerMotorConfig, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
+        hangerMotorConfig = rev.SparkMaxConfig()
+        (
+            hangerMotorConfig
+                .setIdleMode(rev.SparkBaseConfig.IdleMode.kBrake)
+                .smartCurrentLimit(40)
+        )
+        (
+            hangerMotorConfig
+                .closedLoop
+                    .pid(0.1, 0, 0)
+                    .setFeedbackSensor(rev.ClosedLoopConfig.FeedbackSensor.kAbsoluteEncoder)
+        )
+        (
+            hangerMotorConfig
+                .encoder
+                    .positionConversionFactor(constants.kHangerMotorReduction * math.pi * 2)
+        )
+        (
+            hangerMotorConfig
+                .absoluteEncoder
+                    .positionConversionFactor(math.pi * 2)
+                    .zeroCentered(True)
+        )
+        self.hangerMotor.configure(hangerMotorConfig, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
 
-    # Telemetry
-    setpointTopic = ntutil.getFloatTopic("/Hanger/Setpoint/Actual")
-    slewedSetpointTopic = ntutil.getFloatTopic("/Hanger/Setpoint/Slewed")
-    angleTopic = ntutil.getFloatTopic("/Hanger/Angle")
+        # Telemetry
+        self.setpointTopic = ntutil.getFloatTopic("/Hanger/Setpoint/Actual")
+        self.slewedSetpointTopic = ntutil.getFloatTopic("/Hanger/Setpoint/Slewed")
+        self.angleTopic = ntutil.getFloatTopic("/Hanger/Angle")
 
-    # Control variables
-    setpoint = 0
-    setpointLimiter = SlewRateLimiter(math.pi)
+        # Control variables
+        self.setpoint = 0
+        self.setpointLimiter = SlewRateLimiter(math.pi)
 
     def periodic(self):
         safeSetpoint = utils.clamp(self.setpoint, constants.kHangerMinAngle, constants.kHangerMaxAngle)

@@ -9,14 +9,10 @@ class ChassisSpeeds2175:
     when we set our speed to zero.
     """
 
-    direction: float # rad
-    speed: float # m/s
-    omega: float # rad/s
-
     def __init__(self, direction: float, speed: float, omega: float):
-        self.direction = direction
-        self.speed = speed
-        self.omega = omega
+        self.direction: float = direction # rad
+        self.speed: float = speed # m/s
+        self.omega: float = omega # rad/s
     
     def fromWPILibChassisSpeeds(speeds: ChassisSpeeds):
         direction = math.atan2(speeds.vy, speeds.vx)

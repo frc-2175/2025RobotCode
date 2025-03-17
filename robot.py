@@ -17,23 +17,24 @@ import utils
 from subsystems.hanger import Hanger
 
 class MyRobot(wpilib.TimedRobot):
-    leftStick = wpilib.Joystick(0)
-    rightStick = wpilib.Joystick(1)
-    gamePad = wpilib.XboxController(2)
-
-    drivetrain = Drivetrain()
-    sourceintake = SourceIntake()
-    elevatorandarm = ElevatorAndArm()
-    hanger = Hanger()
-
-    scoringMode = constants.kCoralMode
-    algaeReverse = False
-
     def robotInit(self):
         # wpilib.DataLogManager.start()
         # URCL.start()
+
+        self.leftStick = wpilib.Joystick(0)
+        self.rightStick = wpilib.Joystick(1)
+        self.gamePad = wpilib.XboxController(2)
+
+        self.drivetrain = Drivetrain()
+        self.sourceintake = SourceIntake()
+        self.elevatorandarm = ElevatorAndArm()
+        self.hanger = Hanger()
+
+        self.scoringMode = constants.kCoralMode
+        self.algaeReverse = False
+
         self.elevatorandarm.set_arm_position(constants.kElevatorL1, constants.kWristUprightAngle, constants.kCoralMode)
-        pass
+
     
     def robotPeriodic(self):
         self.drivetrain.periodic()

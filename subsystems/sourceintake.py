@@ -8,9 +8,12 @@ import wpimath.geometry
 from wpimath.geometry import Rotation2d
 
 class SourceIntake:
-    intakeSensor = wpilib.AnalogInput(0)
-    # Telemetry
-    intakeSensorTopic = ntutil.getFloatTopic("/Intake/Sensor")
+    def __init__(self):
+        self.intakeSensor = wpilib.AnalogInput(0)
+
+        # Telemetry
+        self.intakeSensorTopic = ntutil.getFloatTopic("/Intake/Sensor")
+
     def periodic(self):
         self.intakeSensorTopic.set(self.intakeSensor.getVoltage())
         pass

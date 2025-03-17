@@ -24,29 +24,19 @@ steerMotorConfig.closedLoop.setFeedbackSensor(
 ).positionWrappingEnabled(True).positionWrappingInputRange(-math.pi,math.pi)
 
 class SwerveModule:
-    driveMotor: rev.SparkMax
-    steerMotor: rev.SparkMax
-    angleOffset: float
-
-    driveEncoder: rev.SparkRelativeEncoder
-    steerEncoder: rev.SparkAbsoluteEncoder
-
-    drivePidController: rev.SparkClosedLoopController
-    steerPidController: rev.SparkClosedLoopController
-
     def __init__(self, driveMotorId: int, steerMotorId: int, angleOffset: float):
-        self.driveMotor = rev.SparkMax(driveMotorId, rev.SparkLowLevel.MotorType.kBrushless)
-        self.steerMotor = rev.SparkMax(steerMotorId, rev.SparkLowLevel.MotorType.kBrushless)
-        self.angleOffset = angleOffset
+        self.driveMotor: rev.SparkMax = rev.SparkMax(driveMotorId, rev.SparkLowLevel.MotorType.kBrushless)
+        self.steerMotor: rev.SparkMax = rev.SparkMax(steerMotorId, rev.SparkLowLevel.MotorType.kBrushless)
+        self.angleOffset: float = angleOffset
 
         self.driveMotor.configure(driveMotorConfig, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
         self.steerMotor.configure(steerMotorConfig, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
     
-        self.driveEncoder = self.driveMotor.getEncoder()
-        self.steerEncoder = self.steerMotor.getAbsoluteEncoder()
+        self.driveEncoder: rev.SparkRelativeEncoder = self.driveMotor.getEncoder()
+        self.steerEncoder: rev.SparkAbsoluteEncoder = self.steerMotor.getAbsoluteEncoder()
 
-        self.drivePidController = self.driveMotor.getClosedLoopController()
-        self.steerPidController= self.steerMotor.getClosedLoopController()
+        self.drivePidController: rev.SparkClosedLoopController = self.driveMotor.getClosedLoopController()
+        self.steerPidController: rev.SparkClosedLoopController = self.steerMotor.getClosedLoopController()
     
     def setState(self, state: SwerveModuleState):
         state.angle += Rotation2d(self.angleOffset)
