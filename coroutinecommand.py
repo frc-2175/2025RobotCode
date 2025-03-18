@@ -4,7 +4,9 @@ from typing import Callable, Iterator, ParamSpec, Set
 
 from commands2 import Command, CommandScheduler
 from commands2.subsystem import Subsystem
+import wpilib
 
+from gentools import doneable
 import ntutil
 
 
@@ -86,3 +88,11 @@ class RestartableCommand(Command):
 
     def getRequirements(self) -> Set[Subsystem]:
         return self.cmd.getRequirements()
+
+
+@doneable
+def sleep(duration: float):
+    t = wpilib.Timer()
+    t.start()
+    while not t.hasElapsed(duration):
+        yield

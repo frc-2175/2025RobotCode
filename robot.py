@@ -1,5 +1,6 @@
 from typing import Callable
-from coroutinecommand import RestartableCommand
+from coroutinecommand import RestartableCommand, commandify, sleep
+from gentools import doneable
 import ntutil
 from wpimath.geometry import Translation2d
 import wpilib
@@ -50,6 +51,8 @@ class MyRobot(wpilib.TimedRobot):
             self.autoChooser.setDefaultOption(name, RestartableCommand(cmd))
         def addAuto(name: str, cmd: Callable[[], Command]):
             self.autoChooser.addOption(name, RestartableCommand(cmd))
+
+        setDefaultAuto("None", commandify(self.doNothingAuto))
 
         # Control state
         self.scoringMode = constants.kCoralMode
@@ -145,11 +148,19 @@ class MyRobot(wpilib.TimedRobot):
         else:
             print(f"Variable scoringMode improper value: {self.scoringMode}; expected Coral or Algae")
 
-    # ================= END OF ROBOT LIFECYCLE METHODS =================
+    # ================= AUTONOMOUS ROUTINES =================
+
+    @doneable
+    def doNothingAuto(self):
+        print("Doing nothing...")
+        yield from sleep(2)
+        print("Still doing nothing...")
+        yield from sleep(2)
+        print("Done doing nothing :)")
+
     # ================= UTILITY METHODS =================
 
     def initializeSchedulerLogging(self):
         self.scheduler.onCommandInitialize(lambda command: self.commandLog.append(f"{command.getName()}: Initialized"))
         self.scheduler.onCommandInterrupt(lambda command: self.commandLog.append(f"{command.getName()}: Interrupted"))
-        self.scheduler.onCommandInterruptWithCause(lambda command, cause: self.commandLog.append(f"{command.getName()}: Interrupted by {cause.getName()} (THIS SHOULD NEVER HAPPEN)"))
         self.scheduler.onCommandFinish(lambda command: self.commandLog.append(f"{command.getName()}: Finished"))
