@@ -4,6 +4,7 @@ from gentools import doneable
 import ntutil
 from wpimath.geometry import Translation2d
 import wpilib
+from wpilib import SmartDashboard
 import math
 import rev
 import wpimath
@@ -24,6 +25,7 @@ import utils
 class MyRobot(wpilib.TimedRobot):
     def robotInit(self):
         wpilib.DataLogManager.start()
+        wpilib.DriverStation.startDataLog(wpilib.DataLogManager.getLog())
         # URCL.start()
 
         # Joysticks and input
@@ -39,7 +41,6 @@ class MyRobot(wpilib.TimedRobot):
 
         # Auto and commands
         self.scheduler = CommandScheduler.getInstance()
-        self.commandLog = ntutil.getStringLog("/Log/Commands")
         self.initializeSchedulerLogging()
 
         # In order to play nice with PathPlanner's autos, which are Command-only,
@@ -51,12 +52,16 @@ class MyRobot(wpilib.TimedRobot):
             self.autoChooser.setDefaultOption(name, RestartableCommand(cmd))
         def addAuto(name: str, cmd: Callable[[], Command]):
             self.autoChooser.addOption(name, RestartableCommand(cmd))
+        SmartDashboard.putData("Auto selection", self.autoChooser)
 
         setDefaultAuto("None", commandify(self.doNothingAuto))
 
         # Control state
         self.scoringMode = constants.kCoralMode
         self.algaeReverse = False
+
+        # Controls telemetry
+        self.scoringModeTopic = ntutil.getStringTopic("/Controls/ScoringMode")
 
         # Final initialization
         self.elevatorandarm.set_arm_position(constants.kElevatorL1, constants.kWristUprightAngle, constants.kCoralMode)
@@ -69,6 +74,13 @@ class MyRobot(wpilib.TimedRobot):
         self.sourceintake.periodic()
         self.elevatorandarm.periodic()
         self.hanger.periodic()
+
+        if self.scoringMode == constants.kCoralMode:
+            self.scoringModeTopic.set("Coral")
+        elif self.scoringMode == constants.kAlgaeMode:
+            self.scoringModeTopic.set("Algae")
+        else:
+            self.scoringModeTopic.set("???")
 
 
     def testPeriodic(self):
@@ -152,15 +164,15 @@ class MyRobot(wpilib.TimedRobot):
 
     @doneable
     def doNothingAuto(self):
-        print("Doing nothing...")
+        ntutil.log("Doing nothing...")
         yield from sleep(2)
-        print("Still doing nothing...")
+        ntutil.log("Still doing nothing...")
         yield from sleep(2)
-        print("Done doing nothing :)")
+        ntutil.log("Done doing nothing :)")
 
     # ================= UTILITY METHODS =================
 
     def initializeSchedulerLogging(self):
-        self.scheduler.onCommandInitialize(lambda command: self.commandLog.append(f"{command.getName()}: Initialized"))
-        self.scheduler.onCommandInterrupt(lambda command: self.commandLog.append(f"{command.getName()}: Interrupted"))
-        self.scheduler.onCommandFinish(lambda command: self.commandLog.append(f"{command.getName()}: Finished"))
+        self.scheduler.onCommandInitialize(lambda command: ntutil.log(f"{command.getName()}: Initialized"))
+        self.scheduler.onCommandInterrupt(lambda command: ntutil.log(f"{command.getName()}: Interrupted"))
+        self.scheduler.onCommandFinish(lambda command: ntutil.log(f"{command.getName()}: Finished"))

@@ -3,7 +3,6 @@ import wpilib
 import wpiutil.log
 
 nt = ntcore.NetworkTableInstance.getDefault()
-log = wpilib.DataLogManager.getLog()
 
 # Plain NetworkTables topics
 
@@ -64,38 +63,41 @@ def getStructTopic(name: str, type: type, defaultValue=None) -> _NTTopic:
 
 # Log entries
 
+def log(msg: str):
+    wpilib.DataLogManager.log(msg)
+
 def getBooleanArrayLog(name: str):
-    return wpiutil.log.BooleanArrayLogEntry(log, name)
+    return wpiutil.log.BooleanArrayLogEntry(wpilib.DataLogManager.getLog(), name)
 
 def getBooleanLog(name: str):
-    return wpiutil.log.BooleanLogEntry(log, name)
+    return wpiutil.log.BooleanLogEntry(wpilib.DataLogManager.getLog(), name)
 
 def getDoubleArrayLog(name: str):
-    return wpiutil.log.DoubleArrayLogEntry(log, name)
+    return wpiutil.log.DoubleArrayLogEntry(wpilib.DataLogManager.getLog(), name)
 
 def getDoubleLog(name: str):
-    return wpiutil.log.DoubleLogEntry(log, name)
+    return wpiutil.log.DoubleLogEntry(wpilib.DataLogManager.getLog(), name)
 
 def getFloatArrayLog(name: str):
-    return wpiutil.log.FloatArrayLogEntry(log, name)
+    return wpiutil.log.FloatArrayLogEntry(wpilib.DataLogManager.getLog(), name)
 
 def getFloatLog(name: str):
-    return wpiutil.log.FloatLogEntry(log, name)
+    return wpiutil.log.FloatLogEntry(wpilib.DataLogManager.getLog(), name)
 
 def getIntegerArrayLog(name: str):
-    return wpiutil.log.IntegerArrayLogEntry(log, name)
+    return wpiutil.log.IntegerArrayLogEntry(wpilib.DataLogManager.getLog(), name)
 
 def getIntegerLog(name: str):
-    return wpiutil.log.IntegerLogEntry(log, name)
+    return wpiutil.log.IntegerLogEntry(wpilib.DataLogManager.getLog(), name)
 
 def getStringArrayLog(name: str):
-    return wpiutil.log.StringArrayLogEntry(log, name)
+    return wpiutil.log.StringArrayLogEntry(wpilib.DataLogManager.getLog(), name)
 
 def getStringLog(name: str):
-    return wpiutil.log.StringLogEntry(log, name)
+    return wpiutil.log.StringLogEntry(wpilib.DataLogManager.getLog(), name)
 
 def getStructArrayLog(name: str, type: type):
-    return wpiutil.log.StructArrayLogEntry(log, name, type)
+    return wpiutil.log.StructArrayLogEntry(wpilib.DataLogManager.getLog(), name, type)
 
 def getStructLog(name: str, type: type):
-    return wpiutil.log.StructLogEntry(log, name, type)
+    return wpiutil.log.StructLogEntry(wpilib.DataLogManager.getLog(), name, type)

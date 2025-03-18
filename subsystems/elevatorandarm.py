@@ -2,6 +2,7 @@ import rev
 import math
 from wpimath.geometry import Translation2d
 import wpilib
+from wpilib import SmartDashboard
 import wpimath
 import wpimath.geometry
 from wpimath.kinematics import SwerveDrive4Kinematics, ChassisSpeeds, SwerveModuleState
@@ -131,6 +132,10 @@ class ElevatorAndArm:
         self.wristSafePositionTopic = ntutil.getFloatTopic("/Wrist/SafePosition")
         self.wristFFTopic = ntutil.getFloatTopic("/Wrist/FF")
 
+        # Mechanism2d telemetry
+        self.mechActual = self.Mechanism("ElevatorMechanism/Actual", wpilib.Color.kRed)
+        self.mechDesired = self.Mechanism("ElevatorMechanism/Desired", wpilib.Color.kBlue)
+
         # do not delete
         self.CalebIsProTopic = ntutil.getStringTopic("/CalebIsTheGoat")
 
@@ -158,6 +163,10 @@ class ElevatorAndArm:
 
         self.wristSafePositionTopic.set(safeWristPosition)
         self.wristFFTopic.set(armFF)
+
+        # Update Mechanism2d telemetry
+        self.mechActual.update(elevatorHeight=self.get_elevator_position(), armAngle=self.get_wrist_position())
+        self.mechDesired.update(elevatorHeight=slewedElevatorSetpoint, armAngle=safeWristPosition)
 
     def set_elevator_pid(self, p: float, i: float, d: float):
         """
@@ -248,3 +257,32 @@ class ElevatorAndArm:
 
     def compute_elevator_height(self, armHeight, angle, radius):
         return armHeight - constants.kArmHeightInCarriage - constants.kElevatorBaseHeight - radius * math.cos(angle)
+
+    class Mechanism:
+        """
+        A utility class that creates a Mechanism2d for display in AdvantageScope.
+        This makes it easy to display both the desired and actual mechanisms.
+        """
+        def __init__(self, name: str, color: wpilib.Color):
+            canvasWidth = 2 # m
+            canvasHeight = 2.5 # m
+            self.mech = wpilib.Mechanism2d(width=canvasWidth, height=canvasHeight)
+            self.root = self.mech.getRoot("Scorer",
+                x=canvasWidth/2 + wpimath.units.inchesToMeters(7),
+                y=0,
+            )
+            self.elevator = self.root.appendLigament("Elevator",
+                length=constants.kElevatorBaseHeight + constants.kArmHeightInCarriage,
+                angle=90, # Mechanism2d uses degrees for reasons unknown
+                color=wpilib.Color8Bit(color),
+            )
+            self.wrist = self.elevator.appendLigament("Wrist",
+                length=constants.kArmAlgaeRadius,
+                angle=0,
+                color=wpilib.Color8Bit(color),
+            )
+            SmartDashboard.putData(name, self.mech)
+
+        def update(self, elevatorHeight, armAngle):
+            self.elevator.setLength(constants.kElevatorBaseHeight + elevatorHeight + constants.kArmHeightInCarriage)
+            self.wrist.setAngle(wpimath.units.radiansToDegrees(armAngle))

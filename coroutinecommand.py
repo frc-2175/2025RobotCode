@@ -12,8 +12,6 @@ import ntutil
 
 P = ParamSpec("P")
 
-commandLog = ntutil.getStringLog("/Log/Commands")
-
 def commandify(func: Callable[P, Iterator]) -> Callable[P, Command]:
     @wraps(func)
     def wrapper(*args: P.args, **kwargs: P.kwargs):
@@ -30,9 +28,8 @@ def commandify(func: Callable[P, Iterator]) -> Callable[P, Command]:
                 # self.addRequirements(r.subsystems)
 
             def initialize(self):
-                commandLog.append(f"{self.getName()}: Initializing")
                 if self.initialized:
-                    commandLog.append("ERROR: Initialized a GeneratorCommand more than once! This will not work; instead, the generator will just resume partway through!")
+                    ntutil.log("ERROR: Initialized a GeneratorCommand more than once! This will not work; instead, the generator will just resume partway through!")
                 self.initialized = True
 
             def execute(self) -> None:
@@ -42,10 +39,7 @@ def commandify(func: Callable[P, Iterator]) -> Callable[P, Command]:
                     self.is_finished = True
 
             def isFinished(self) -> bool:
-                finished = self.is_finished
-                if finished:
-                    commandLog.append(f"{self.getName()}: Finished!")
-                return finished
+                return self.is_finished
 
             def getName(self) -> str:
                 return func.__name__
@@ -71,7 +65,7 @@ class RestartableCommand(Command):
         self.cmd = self.make()
         if self.didEverInitialize:
             finishedMsg = " (had not finished)" if self.isActive else ""
-            commandLog.append(f"RestartableCommand({self.cmd.getName()}): Restarting!{finishedMsg}")
+            ntutil.log(f"{self.getName()}: Restarting!{finishedMsg}")
         self.didEverInitialize = True
         self.isActive = True
         return self.cmd.initialize()
@@ -88,6 +82,9 @@ class RestartableCommand(Command):
 
     def getRequirements(self) -> Set[Subsystem]:
         return self.cmd.getRequirements()
+
+    def getName(self) -> str:
+        return f"RestartableCommand({self.cmd.getName()})"
 
 
 @doneable
