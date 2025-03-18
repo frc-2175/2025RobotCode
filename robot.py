@@ -1,3 +1,6 @@
+from typing import Callable
+from coroutinecommand import RestartableCommand
+import ntutil
 from wpimath.geometry import Translation2d
 import wpilib
 import math
@@ -7,46 +10,85 @@ import wpimath.geometry
 from wpimath.kinematics import SwerveDrive4Kinematics, ChassisSpeeds, SwerveModuleState
 import ntcore
 import wpimath.units
-import constants
+from commands2 import Command, CommandScheduler
 # from urcl import URCL
 
+import constants
 from subsystems.drivetrain import Drivetrain
 from subsystems.sourceintake import SourceIntake
 from subsystems.elevatorandarm import ElevatorAndArm
-import utils
 from subsystems.hanger import Hanger
+import utils
 
 class MyRobot(wpilib.TimedRobot):
     def robotInit(self):
-        # wpilib.DataLogManager.start()
+        wpilib.DataLogManager.start()
         # URCL.start()
 
+        # Joysticks and input
         self.leftStick = wpilib.Joystick(0)
         self.rightStick = wpilib.Joystick(1)
         self.gamePad = wpilib.XboxController(2)
 
+        # Subsystems
         self.drivetrain = Drivetrain()
         self.sourceintake = SourceIntake()
         self.elevatorandarm = ElevatorAndArm()
         self.hanger = Hanger()
 
+        # Auto and commands
+        self.scheduler = CommandScheduler.getInstance()
+        self.commandLog = ntutil.getStringLog("/Log/Commands")
+        self.initializeSchedulerLogging()
+
+        # In order to play nice with PathPlanner's autos, which are Command-only,
+        # we always store Commands in our auto chooser. However, since we want our
+        # autos to be restartable, we use these wrappers to ensure that all our auto
+        # options can be wrapped in RestartableCommand.
+        self.autoChooser = wpilib.SendableChooser()
+        def setDefaultAuto(name: str, cmd: Callable[[], Command]):
+            self.autoChooser.setDefaultOption(name, RestartableCommand(cmd))
+        def addAuto(name: str, cmd: Callable[[], Command]):
+            self.autoChooser.addOption(name, RestartableCommand(cmd))
+
+        # Control state
         self.scoringMode = constants.kCoralMode
         self.algaeReverse = False
 
+        # Final initialization
         self.elevatorandarm.set_arm_position(constants.kElevatorL1, constants.kWristUprightAngle, constants.kCoralMode)
 
     
     def robotPeriodic(self):
+        self.scheduler.run()
+
         self.drivetrain.periodic()
         self.sourceintake.periodic()
         self.elevatorandarm.periodic()
         self.hanger.periodic()
-    
+
+
     def testPeriodic(self):
         # self.elevatorandarm.set_elevator_pid(utils.remap(self.leftStick.getRawAxis(2), (-1, 1), (3, 0)), 0, 0)
         # self.elevatorandarm.set_elevator_position(utils.remap(self.rightStick.getRawAxis(2), (-1, 1), (1, 0)))
         self.hanger.set_position(utils.remap(self.leftStick.getRawAxis(2), (-1, 1), (math.pi / 2, -math.pi / 2)))
         pass
+
+
+    def autonomousInit(self) -> None:
+        self.scheduler.cancelAll()
+        # TODO: Reset pose?
+        # TODO: Restore when we add the swerve heading controller
+        # self.swerve.headingController.setState(SwerveHeadingState.DISABLE)
+
+        autoCommand = self.autoChooser.getSelected()
+        self.scheduler.schedule(autoCommand)
+
+
+    def autonomousPeriodic(self) -> None:
+        # No code necessary. The CommandScheduler will continue to run the command
+        # scheduled by autonomousInit.
+        return
 
 
     def teleopPeriodic(self) -> None:
@@ -102,3 +144,12 @@ class MyRobot(wpilib.TimedRobot):
 
         else:
             print(f"Variable scoringMode improper value: {self.scoringMode}; expected Coral or Algae")
+
+    # ================= END OF ROBOT LIFECYCLE METHODS =================
+    # ================= UTILITY METHODS =================
+
+    def initializeSchedulerLogging(self):
+        self.scheduler.onCommandInitialize(lambda command: self.commandLog.append(f"{command.getName()}: Initialized"))
+        self.scheduler.onCommandInterrupt(lambda command: self.commandLog.append(f"{command.getName()}: Interrupted"))
+        self.scheduler.onCommandInterruptWithCause(lambda command, cause: self.commandLog.append(f"{command.getName()}: Interrupted by {cause.getName()} (THIS SHOULD NEVER HAPPEN)"))
+        self.scheduler.onCommandFinish(lambda command: self.commandLog.append(f"{command.getName()}: Finished"))

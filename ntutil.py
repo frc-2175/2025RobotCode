@@ -1,6 +1,11 @@
 import ntcore
+import wpilib
+import wpiutil.log
 
 nt = ntcore.NetworkTableInstance.getDefault()
+log = wpilib.DataLogManager.getLog()
+
+# Plain NetworkTables topics
 
 class _NTTopic:
     def __init__(self, topic, default):
@@ -56,3 +61,41 @@ def getStructTopic(name: str, type: type, defaultValue=None) -> _NTTopic:
     if defaultValue is None:
         defaultValue = type()
     return _NTTopic(nt.getStructTopic(name, type), defaultValue)
+
+# Log entries
+
+def getBooleanArrayLog(name: str):
+    return wpiutil.log.BooleanArrayLogEntry(log, name)
+
+def getBooleanLog(name: str):
+    return wpiutil.log.BooleanLogEntry(log, name)
+
+def getDoubleArrayLog(name: str):
+    return wpiutil.log.DoubleArrayLogEntry(log, name)
+
+def getDoubleLog(name: str):
+    return wpiutil.log.DoubleLogEntry(log, name)
+
+def getFloatArrayLog(name: str):
+    return wpiutil.log.FloatArrayLogEntry(log, name)
+
+def getFloatLog(name: str):
+    return wpiutil.log.FloatLogEntry(log, name)
+
+def getIntegerArrayLog(name: str):
+    return wpiutil.log.IntegerArrayLogEntry(log, name)
+
+def getIntegerLog(name: str):
+    return wpiutil.log.IntegerLogEntry(log, name)
+
+def getStringArrayLog(name: str):
+    return wpiutil.log.StringArrayLogEntry(log, name)
+
+def getStringLog(name: str):
+    return wpiutil.log.StringLogEntry(log, name)
+
+def getStructArrayLog(name: str, type: type):
+    return wpiutil.log.StructArrayLogEntry(log, name, type)
+
+def getStructLog(name: str, type: type):
+    return wpiutil.log.StructLogEntry(log, name, type)
