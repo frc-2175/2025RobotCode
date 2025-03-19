@@ -4,7 +4,7 @@ from gentools import doneable
 import ntutil
 from wpimath.geometry import Translation2d
 import wpilib
-from wpilib import SmartDashboard
+from wpilib import SmartDashboard, Alert
 import math
 import wpimath
 import wpimath.geometry
@@ -14,6 +14,7 @@ from commands2 import Command, CommandScheduler
 import choreo
 from wpilib import DriverStation
 import os
+import os.path
 # from urcl import URCL
 import constants
 from subsystems.drivetrain import Drivetrain
@@ -41,6 +42,7 @@ class MyRobot(wpilib.TimedRobot):
 
         # Auto and commands
         self.scheduler = CommandScheduler.getInstance()
+        self.autoTimer = wpilib.Timer()
         self.initializeSchedulerLogging()
 
         # In order to play nice with PathPlanner's autos, which are Command-only,
@@ -48,13 +50,15 @@ class MyRobot(wpilib.TimedRobot):
         # autos to be restartable, we use these wrappers to ensure that all our auto
         # options can be wrapped in RestartableCommand.
         self.autoChooser = wpilib.SendableChooser()
-        def setDefaultAuto(name: str, cmd: Callable[[], Command]):
-            self.autoChooser.setDefaultOption(name, RestartableCommand(cmd))
-        def addAuto(name: str, cmd: Callable[[], Command]):
-            self.autoChooser.addOption(name, RestartableCommand(cmd))
-        SmartDashboard.putData("Auto selection", self.autoChooser)
+        self.trajectory = None
+        choreoDir = os.path.join(wpilib.getDeployDirectory(), "choreo")
+        autoFiles = [f for f in os.listdir(choreoDir) if os.path.isfile(os.path.join(choreoDir, f)) and f.endswith(".traj")]
+        for filename in autoFiles:
+            self.autoChooser.addOption(filename, filename)
+        SmartDashboard.putData("Auto Trajectory", self.autoChooser)
 
-        setDefaultAuto("None", commandify(self.doNothingAuto))
+        # Alerts
+        self.badTrajectoryAlert = Alert("Choreo path not found", Alert.AlertType.kError)
 
         # Control state
         self.scoringMode = constants.kCoralMode
@@ -97,39 +101,26 @@ class MyRobot(wpilib.TimedRobot):
         try:
             selected_trajectory = self.autoChooser.getSelected()
             # Check the path we're trying to load actually exists before handing to Choreo
-            if selected_trajectory and os.path.exists(os.path.join(choreo.getDeployDirectory(), "choreo", selected_trajectory + ".traj")):
+            if selected_trajectory and os.path.exists(os.path.join(wpilib.getDeployDirectory(), "choreo", selected_trajectory + ".traj")):
                 self.trajectory = choreo.load_swerve_trajectory(self.autoChooser.getSelected())
             else:
-                print("Choreo path not found")
+                ntutil.log(f"Choreo path not found: {selected_trajectory}")
         except ValueError:
             self.trajectory = None
-
-        self.autoTimer = wpilib.Timer()
+        self.badTrajectoryAlert.set(self.trajectory is None)
 
         if self.trajectory:
-            initial_pose = self.trajectory.get_initial_pose((DriverStation.getAlliance() == DriverStation.Alliance.kRed))
-
+            initial_pose = self.trajectory.get_initial_pose(wpilib.DriverStation.getAlliance() == wpilib.DriverStation.Alliance.kRed)
             if initial_pose:
-                # TODO: Actually reset pose and pass in initial pose from PhotonVision
-                self.drivetrain.reset_pose()
-            
+                self.drivetrain.reset_pose(initial_pose)
             self.autoTimer.restart()
-
-        autoCommand = self.autoChooser.getSelected()
-        self.scheduler.schedule(autoCommand)
 
 
     def autonomousPeriodic(self) -> None:
-        # No code necessary. The CommandScheduler will continue to run the command
-        # scheduled by autonomousInit.
-
         if self.trajectory:
-            sample = self.trajectory.sample_at(self.autoTimer.get(), (DriverStation.getAlliance() == DriverStation.Alliance.kRed))
-
+            sample = self.trajectory.sample_at(self.autoTimer.get(), (wpilib.DriverStation.getAlliance() == wpilib.DriverStation.Alliance.kRed))
             if sample:
                 self.drivetrain.follow_choreo_trajectory(sample)
-
-        return
 
 
     def teleopPeriodic(self) -> None:
@@ -185,16 +176,6 @@ class MyRobot(wpilib.TimedRobot):
 
         else:
             print(f"Variable scoringMode improper value: {self.scoringMode}; expected Coral or Algae")
-
-    # ================= AUTONOMOUS ROUTINES =================
-
-    @doneable
-    def doNothingAuto(self):
-        ntutil.log("Doing nothing...")
-        yield from sleep(2)
-        ntutil.log("Still doing nothing...")
-        yield from sleep(2)
-        ntutil.log("Done doing nothing :)")
 
     # ================= UTILITY METHODS =================
 

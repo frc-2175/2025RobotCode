@@ -157,8 +157,8 @@ class Drivetrain:
         except:
             pass
 
-    def reset_pose(self):
-        # TODO
+    def reset_pose(self, pose: Pose2d):
+        self.odometry.resetPose(pose)
         pass
 
     def get_pose(self) -> Pose2d:
@@ -187,9 +187,9 @@ class Drivetrain:
 
         # Not currently controlling robot heading
         self.drive(
-            self,
             sample.vx + self.x_controller.calculate(pose.X(), sample.x),
-            sample.vy + self.y_controller.calculate(pose.Y(), sample.y)
+            sample.vy + self.y_controller.calculate(pose.Y(), sample.y),
+            sample.omega, # TODO: Add heading controller - see Getting Started docs for Choreo
         )
         
     def reset_heading(self):

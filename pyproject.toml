@@ -29,5 +29,6 @@ robotpy_extras = [
 # Other pip packages to install
 requires = [
     "robotpy-urcl",
-    "photonlibpy"
+    "photonlibpy",
+    "choreo",
 ]
