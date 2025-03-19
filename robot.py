@@ -6,15 +6,15 @@ from wpimath.geometry import Translation2d
 import wpilib
 from wpilib import SmartDashboard
 import math
-import rev
 import wpimath
 import wpimath.geometry
 from wpimath.kinematics import SwerveDrive4Kinematics, ChassisSpeeds, SwerveModuleState
-import ntcore
 import wpimath.units
 from commands2 import Command, CommandScheduler
+import choreo
+from wpilib import DriverStation
+import os
 # from urcl import URCL
-
 import constants
 from subsystems.drivetrain import Drivetrain
 from subsystems.sourceintake import SourceIntake
@@ -66,7 +66,6 @@ class MyRobot(wpilib.TimedRobot):
         # Final initialization
         self.elevatorandarm.set_arm_position(constants.kElevatorL1, constants.kWristUprightAngle, constants.kCoralMode)
 
-    
     def robotPeriodic(self):
         self.scheduler.run()
 
@@ -86,15 +85,35 @@ class MyRobot(wpilib.TimedRobot):
     def testPeriodic(self):
         # self.elevatorandarm.set_elevator_pid(utils.remap(self.leftStick.getRawAxis(2), (-1, 1), (3, 0)), 0, 0)
         # self.elevatorandarm.set_elevator_position(utils.remap(self.rightStick.getRawAxis(2), (-1, 1), (1, 0)))
+
         self.hanger.set_position(utils.remap(self.leftStick.getRawAxis(2), (-1, 1), (math.pi / 2, -math.pi / 2)))
+
         pass
 
 
     def autonomousInit(self) -> None:
         self.scheduler.cancelAll()
-        # TODO: Reset pose?
-        # TODO: Restore when we add the swerve heading controller
-        # self.swerve.headingController.setState(SwerveHeadingState.DISABLE)
+
+        try:
+            selected_trajectory = self.autoChooser.getSelected()
+            # Check the path we're trying to load actually exists before handing to Choreo
+            if selected_trajectory and os.path.exists(os.path.join(choreo.getDeployDirectory(), "choreo", selected_trajectory + ".traj")):
+                self.trajectory = choreo.load_swerve_trajectory(self.autoChooser.getSelected())
+            else:
+                print("Choreo path not found")
+        except ValueError:
+            self.trajectory = None
+
+        self.autoTimer = wpilib.Timer()
+
+        if self.trajectory:
+            initial_pose = self.trajectory.get_initial_pose((DriverStation.getAlliance() == DriverStation.Alliance.kRed))
+
+            if initial_pose:
+                # TODO: Actually reset pose and pass in initial pose from PhotonVision
+                self.drivetrain.reset_pose()
+            
+            self.autoTimer.restart()
 
         autoCommand = self.autoChooser.getSelected()
         self.scheduler.schedule(autoCommand)
@@ -103,6 +122,13 @@ class MyRobot(wpilib.TimedRobot):
     def autonomousPeriodic(self) -> None:
         # No code necessary. The CommandScheduler will continue to run the command
         # scheduled by autonomousInit.
+
+        if self.trajectory:
+            sample = self.trajectory.sample_at(self.autoTimer.get(), (DriverStation.getAlliance() == DriverStation.Alliance.kRed))
+
+            if sample:
+                self.drivetrain.follow_choreo_trajectory(sample)
+
         return
 
 

@@ -1,21 +1,19 @@
 import navx
-import rev
 import constants
 import math
-import wpimath
-from wpimath.geometry import Translation2d, Rotation2d, Pose2d
+from wpimath.geometry import Translation2d, Rotation2d, Pose2d, Pose3d
 from wpimath.kinematics import SwerveDrive4Kinematics, ChassisSpeeds, SwerveModuleState, SwerveDrive4Odometry
 from wpimath.filter import SlewRateLimiter
-import ntcore
+from wpimath.controller import PIDController
 from swervemodule import SwerveModule
 import utils
 from utils import RotationSlewRateLimiter
 from chassisspeeds import ChassisSpeeds2175
-from pathplannerlib.auto import AutoBuilder
-from pathplannerlib.controller import PPHolonomicDriveController
-from pathplannerlib.config import RobotConfig, PIDConstants
 from wpilib import DriverStation
 import ntutil
+import choreo
+from photonlibpy import PhotonCamera, PhotonPoseEstimator, PoseStrategy
+from robotpy_apriltag import AprilTagFieldLayout, AprilTagField
 
 class Drivetrain:
     def __init__(self):
@@ -57,12 +55,31 @@ class Drivetrain:
         self.currentChassisSpeedsTopic = ntutil.getStructTopic("/ChassisSpeeds/Current", ChassisSpeeds)
         self.gyroTopic = ntutil.getStructTopic("/Gyro", Rotation2d)
         self.robotPoseTopic = ntutil.getStructTopic("/RobotPose", Pose2d)
+        self.visionPoseTopic = ntutil.getStructTopic("/VisionPose", Pose3d)
 
         # Control variables
         self.speedLimiter = SlewRateLimiter(constants.kSpeedSlewRate) #m/s
         self.rotationLimiter = SlewRateLimiter(constants.kRotationSlewRate) #rad/s
         self.directionLimiter = RotationSlewRateLimiter(constants.kDirectionSlewRate) #rad/s
 
+        # Choreo PID controllers
+        self.x_controller = PIDController(10, 0, 0)
+        self.y_controller = PIDController(10, 0, 0) 
+        self.heading_controller = PIDController(7.5, 0, 0)
+
+        self.heading_controller.enableContinuousInput(-math.pi, math.pi)
+
+        # PhotonVision
+        # https://docs.photonvision.org/en/latest/docs/programming/photonlib/robot-pose-estimator.html#apriltags-and-photonposeestimator
+        self.camera = PhotonCamera("vision_camera")
+
+        self.cameraPoseEst = PhotonPoseEstimator(
+            AprilTagFieldLayout.loadField(AprilTagField.k2025ReefscapeWelded),
+            PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
+            self.camera,
+            constants.kRobotToCam
+        )
+        
 
     def periodic(self):
         currentDirection = self.currentChassisSpeeds.direction
@@ -135,6 +152,10 @@ class Drivetrain:
         )
 
         self.robotPoseTopic.set(self.odometry.getPose())
+        try:
+            self.visionPoseTopic.set(self.cameraPoseEst.update().estimatedPose)
+        except:
+            pass
 
     def reset_pose(self):
         # TODO
@@ -161,5 +182,15 @@ class Drivetrain:
 
         self.desiredChassisSpeeds = newSpeeds
 
+    def follow_choreo_trajectory(self, sample):
+        pose = self.get_pose()
+
+        # Not currently controlling robot heading
+        self.drive(
+            self,
+            sample.vx + self.x_controller.calculate(pose.X(), sample.x),
+            sample.vy + self.y_controller.calculate(pose.Y(), sample.y)
+        )
+        
     def reset_heading(self):
         self.gyro.reset()
