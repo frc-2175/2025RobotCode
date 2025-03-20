@@ -63,22 +63,22 @@ class Drivetrain:
         self.directionLimiter = RotationSlewRateLimiter(constants.kDirectionSlewRate) #rad/s
 
         # Choreo PID controllers
-        self.x_controller = PIDController(10, 0, 0)
-        self.y_controller = PIDController(10, 0, 0) 
-        self.heading_controller = PIDController(7.5, 0, 0)
+        self.x_controller = PIDController(0, 0, 0)
+        self.y_controller = PIDController(0, 0, 0) 
+        self.heading_controller = PIDController(0, 0, 0)
 
         self.heading_controller.enableContinuousInput(-math.pi, math.pi)
 
         # PhotonVision
         # https://docs.photonvision.org/en/latest/docs/programming/photonlib/robot-pose-estimator.html#apriltags-and-photonposeestimator
-        self.camera = PhotonCamera("vision_camera")
+        # self.camera = PhotonCamera("vision_camera")
 
-        self.cameraPoseEst = PhotonPoseEstimator(
-            AprilTagFieldLayout.loadField(AprilTagField.k2025ReefscapeWelded),
-            PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
-            self.camera,
-            constants.kRobotToCam
-        )
+        # self.cameraPoseEst = PhotonPoseEstimator(
+        #     AprilTagFieldLayout.loadField(AprilTagField.k2025ReefscapeWelded),
+        #     PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
+        #     self.camera,
+        #     constants.kRobotToCam
+        # )
         
 
     def periodic(self):
@@ -182,7 +182,7 @@ class Drivetrain:
 
         self.desiredChassisSpeeds = newSpeeds
 
-    def follow_choreo_trajectory(self, sample):
+    def follow_choreo_trajectory(self, sample: choreo.SwerveSample):
         pose = self.get_pose()
 
         # Not currently controlling robot heading

@@ -6,8 +6,8 @@ kCoralMode = 0
 kAlgaeMode = 1
 
 # Drivetrain
-kWheelDiameter = wpimath.units.inchesToMeters(3)
-kDriveMotorReduction = (45 * 22) /(13*15)
+kWheelDiameter = wpimath.units.inchesToMeters(2.96) # empirically measured with calipers
+kDriveMotorReduction = 4.71 # From REV MAXSwerve docs
 kDriveMotorFreeSpeed = 5676 / 60 #94.6 rev/s
 kWheelDistanceFromCenter = wpimath.units.inchesToMeters(12.375)
 
