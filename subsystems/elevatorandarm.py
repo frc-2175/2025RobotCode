@@ -168,18 +168,6 @@ class ElevatorAndArm:
         self.mechActual.update(elevatorHeight=self.get_elevator_position(), armAngle=self.get_wrist_position())
         self.mechDesired.update(elevatorHeight=slewedElevatorSetpoint, armAngle=safeWristPosition)
 
-    def set_elevator_pid(self, p: float, i: float, d: float):
-        """
-        Set the elevator PID constants.
-        """
-        
-        self.elevatorMotor1Config.closedLoop.pid(p, i, d)
-        self.elevatorMotor1.configure(self.elevatorMotor1Config, rev.SparkMax.ResetMode.kNoResetSafeParameters, rev.SparkMax.PersistMode.kNoPersistParameters)
-
-        self.elevatorPTopic.set(p)
-        self.elevatorITopic.set(i)
-        self.elevatorDTopic.set(d)
-
     def set_arm_position(self, height: float, angle: float, mode: int):
         self.wristPositionSetpoint = angle
         radius = None

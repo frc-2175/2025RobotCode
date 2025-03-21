@@ -11,7 +11,7 @@ from utils import RotationSlewRateLimiter
 from chassisspeeds import ChassisSpeeds2175
 from wpilib import DriverStation
 import ntutil
-import choreo
+import choreo.trajectory
 from photonlibpy import PhotonCamera, PhotonPoseEstimator, PoseStrategy
 from robotpy_apriltag import AprilTagFieldLayout, AprilTagField
 
@@ -44,23 +44,8 @@ class Drivetrain:
                 self.backLeftSwerveModule.getPosition(),
                 self.backRightSwerveModule.getPosition(),
             ),
-            # Initial pose of the robot, TODO, set from vision
-            Pose2d(0, 0, self.gyro.getRotation2d())
+            Pose2d(0, 0, self.gyro.getRotation2d()) # Initial pose of the robot (will be continuously adjusted by vision)
         )
-
-        # Telemetry
-        self.desiredSwerveStatesTopic = ntutil.getStructArrayTopic("/SwerveStates/Desired", SwerveModuleState)
-        self.actualSwerveStatesTopic = ntutil.getStructArrayTopic("/SwerveStates/Actual", SwerveModuleState)
-        self.desiredChassisSpeedsTopic = ntutil.getStructTopic("/ChassisSpeeds/Desired", ChassisSpeeds)
-        self.currentChassisSpeedsTopic = ntutil.getStructTopic("/ChassisSpeeds/Current", ChassisSpeeds)
-        self.gyroTopic = ntutil.getStructTopic("/Gyro", Rotation2d)
-        self.robotPoseTopic = ntutil.getStructTopic("/RobotPose", Pose2d)
-        self.visionPoseTopic = ntutil.getStructTopic("/VisionPose", Pose3d)
-
-        # Control variables
-        self.speedLimiter = SlewRateLimiter(constants.kSpeedSlewRate) #m/s
-        self.rotationLimiter = SlewRateLimiter(constants.kRotationSlewRate) #rad/s
-        self.directionLimiter = RotationSlewRateLimiter(constants.kDirectionSlewRate) #rad/s
 
         # Choreo PID controllers
         self.x_controller = PIDController(0, 0, 0)
@@ -79,6 +64,20 @@ class Drivetrain:
         #     self.camera,
         #     constants.kRobotToCam
         # )
+
+        # Telemetry
+        self.desiredSwerveStatesTopic = ntutil.getStructArrayTopic("/SwerveStates/Desired", SwerveModuleState)
+        self.actualSwerveStatesTopic = ntutil.getStructArrayTopic("/SwerveStates/Actual", SwerveModuleState)
+        self.desiredChassisSpeedsTopic = ntutil.getStructTopic("/ChassisSpeeds/Desired", ChassisSpeeds)
+        self.currentChassisSpeedsTopic = ntutil.getStructTopic("/ChassisSpeeds/Current", ChassisSpeeds)
+        self.gyroTopic = ntutil.getStructTopic("/Gyro", Rotation2d)
+        self.robotPoseTopic = ntutil.getStructTopic("/RobotPose", Pose2d)
+        self.visionPoseTopic = ntutil.getStructTopic("/VisionPose", Pose3d)
+
+        # Control variables
+        self.speedLimiter = SlewRateLimiter(constants.kSpeedSlewRate) #m/s
+        self.rotationLimiter = SlewRateLimiter(constants.kRotationSlewRate) #rad/s
+        self.directionLimiter = RotationSlewRateLimiter(constants.kDirectionSlewRate) #rad/s
         
 
     def periodic(self):
@@ -152,10 +151,10 @@ class Drivetrain:
         )
 
         self.robotPoseTopic.set(self.odometry.getPose())
-        try:
-            self.visionPoseTopic.set(self.cameraPoseEst.update().estimatedPose)
-        except:
-            pass
+        # try:
+        #     self.visionPoseTopic.set(self.cameraPoseEst.update().estimatedPose)
+        # except:
+        #     pass
 
     def reset_pose(self, pose: Pose2d):
         self.odometry.resetPose(pose)
@@ -182,7 +181,7 @@ class Drivetrain:
 
         self.desiredChassisSpeeds = newSpeeds
 
-    def follow_choreo_trajectory(self, sample: choreo.SwerveSample):
+    def follow_choreo_trajectory(self, sample: choreo.trajectory.SwerveSample):
         pose = self.get_pose()
 
         # Not currently controlling robot heading

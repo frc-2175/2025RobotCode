@@ -16,4 +16,3 @@ class SourceIntake:
 
     def periodic(self):
         self.intakeSensorTopic.set(self.intakeSensor.getVoltage())
-        pass

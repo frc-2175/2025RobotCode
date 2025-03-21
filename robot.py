@@ -53,7 +53,7 @@ class MyRobot(wpilib.TimedRobot):
         # autos to be restartable, we use these wrappers to ensure that all our auto
         # options can be wrapped in RestartableCommand.
         self.autoChooser = wpilib.SendableChooser()
-        self.trajectory: choreo.trajectory.SwerveTrajectory = None
+        self.trajectory: choreo.trajectory.SwerveTrajectory | None = None
         choreoDir = os.path.join(wpilib.getDeployDirectory(), "choreo")
         for idx, filename in enumerate(os.listdir(choreoDir)):
             if not os.path.isfile(os.path.join(choreoDir, filename)):

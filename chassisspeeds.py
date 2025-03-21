@@ -14,11 +14,13 @@ class ChassisSpeeds2175:
         self.speed: float = speed # m/s
         self.omega: float = omega # rad/s
     
+    @staticmethod
     def fromWPILibChassisSpeeds(speeds: ChassisSpeeds):
         direction = math.atan2(speeds.vy, speeds.vx)
         speed = math.sqrt(speeds.vx**2 + speeds.vy**2)
         return ChassisSpeeds2175(direction, speed, speeds.omega)
     
+    @staticmethod
     def fromFieldRelativeSpeeds(vx: float, vy: float, omega: float, robotAngle: Rotation2d):
         wpilibSpeeds = ChassisSpeeds.fromFieldRelativeSpeeds(vx, vy, omega, robotAngle)
         return ChassisSpeeds2175.fromWPILibChassisSpeeds(wpilibSpeeds)
