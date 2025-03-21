@@ -29,10 +29,11 @@ from subsystems.sourceintake import SourceIntake
 
 
 class MyRobot(wpilib.TimedRobot):
-    def robotInit(self):
-        wpilib.DataLogManager.start()
-        wpilib.DriverStation.startDataLog(wpilib.DataLogManager.getLog())
-        # URCL.start()
+    def init(self):
+        """
+        A hacky replacement for __init__ that is called from robotInit to
+        satisfy the needs of robotpy tests.
+        """
 
         # Joysticks and input
         self.leftStick = wpilib.Joystick(0)
@@ -46,49 +47,23 @@ class MyRobot(wpilib.TimedRobot):
         self.hanger = Hanger()
 
         # Auto and commands
-        self.scheduler = CommandScheduler.getInstance()
         self.autoTimer = wpilib.Timer()
-        self.initializeSchedulerLogging()
-
-        # In order to play nice with PathPlanner's autos, which are Command-only,
-        # we always store Commands in our auto chooser. However, since we want our
-        # autos to be restartable, we use these wrappers to ensure that all our auto
-        # options can be wrapped in RestartableCommand.
-        self.autoChooser = wpilib.SendableChooser()
+        self.trajectoryChooser = wpilib.SendableChooser()
         self.trajectory: choreo.trajectory.SwerveTrajectory | None = None
-        choreoDir = os.path.join(wpilib.getDeployDirectory(), "choreo")
-        for idx, filename in enumerate(os.listdir(choreoDir)):
-            if not os.path.isfile(os.path.join(choreoDir, filename)):
-                continue
-            if not filename.endswith(".traj"):
-                continue
-            autoName = filename.removesuffix(".traj")
+        self.scheduler = CommandScheduler.getInstance()
 
-            try:
-                # Check the path we're trying to load actually exists before handing to Choreo
-                if os.path.exists(os.path.join(wpilib.getDeployDirectory(), "choreo", autoName + ".traj")):
-                    trajectory = choreo.load_swerve_trajectory(autoName)
-                    if idx == 0:
-                        self.autoChooser.setDefaultOption(autoName, trajectory)
-                    else:
-                        self.autoChooser.addOption(autoName, trajectory)
-                else:
-                    ntutil.log(f"Choreo path not found: {autoName}")
-                    self.badTrajectoryAlert.setText(f"Choreo path not found: {autoName}")
-                    self.badTrajectoryAlert.set(True)
-            except ValueError as err:
-                ntutil.log(f"Error constructing Choreo trajectory: {err}")
-                self.badTrajectoryAlert.setText(f"Error constructing Choreo trajectory: {err}")
-                self.badTrajectoryAlert.set(True)
-        SmartDashboard.putData("Auto Trajectory", self.autoChooser)
+        SmartDashboard.putData("Auto Trajectory", self.trajectoryChooser)
+        self.initializeSchedulerLogging()
 
         # Alerts
         self.badTrajectoryAlert = Alert("Choreo path not found", Alert.AlertType.kError)
         self.noAutoAlert = Alert("No autonomous trajectory", Alert.AlertType.kWarning)
+        self.scoringModeImproperValue = Alert("Variable scoringMode improper value (expected kCoralMode or kAlgaeMode)", Alert.AlertType.kError)
+        self.algaeReverseImproperValue = Alert("Variable algaeReverse improper value (expected True or False)", Alert.AlertType.kError)
 
         # Control state
         self.scoringMode = constants.kCoralMode
-        self.algaeReverse = False
+        self.algaeReverse: bool = False
 
         # Controls telemetry
         self.scoringModeTopic = ntutil.getStringTopic("/Controls/ScoringMode")
@@ -99,8 +74,18 @@ class MyRobot(wpilib.TimedRobot):
         self.autoPoseTopic = ntutil.getStructTopic("/Auto/Pose", Pose2d)
         self.autoHasSampleTopic = ntutil.getBooleanTopic("/Auto/HasSample")
 
+
+    def robotInit(self):
+        wpilib.DataLogManager.start()
+        wpilib.DriverStation.startDataLog(wpilib.DataLogManager.getLog())
+        # URCL.start()
+
+        self.init()
+        self.loadChoreoTrajectories()
+
         # Final initialization
         self.elevatorandarm.set_arm_position(constants.kElevatorL1, constants.kWristUprightAngle, constants.kCoralMode)
+
 
     def robotPeriodic(self):
         self.scheduler.run()
@@ -130,7 +115,7 @@ class MyRobot(wpilib.TimedRobot):
     def autonomousInit(self) -> None:
         self.scheduler.cancelAll()
 
-        self.trajectory = self.autoChooser.getSelected()
+        self.trajectory = self.trajectoryChooser.getSelected()
         if self.trajectory:
             initial_pose = self.trajectory.get_initial_pose(wpilib.DriverStation.getAlliance() == wpilib.DriverStation.Alliance.kRed)
             if initial_pose:
@@ -201,14 +186,38 @@ class MyRobot(wpilib.TimedRobot):
             elif self.algaeReverse == False:
                 self.elevatorandarm.move_algae(-gamePieceSpeed)
             else:
-                print(f"Variable algaeReverse improper value: {self.algaeReverse}; expected True or False")
+                ntutil.logAlert(self.algaeReverseImproperValue, self.algaeReverse)
 
         else:
-            print(f"Variable scoringMode improper value: {self.scoringMode}; expected Coral or Algae")
+            ntutil.logAlert(self.scoringModeImproperValue, self.scoringMode)
+
 
     # ================= UTILITY METHODS =================
+
 
     def initializeSchedulerLogging(self):
         self.scheduler.onCommandInitialize(lambda command: ntutil.log(f"{command.getName()}: Initialized"))
         self.scheduler.onCommandInterrupt(lambda command: ntutil.log(f"{command.getName()}: Interrupted"))
         self.scheduler.onCommandFinish(lambda command: ntutil.log(f"{command.getName()}: Finished"))
+
+    def loadChoreoTrajectories(self):
+        choreoDir = os.path.join(wpilib.getDeployDirectory(), "choreo")
+        for idx, filename in enumerate(os.listdir(choreoDir)):
+            if not os.path.isfile(os.path.join(choreoDir, filename)):
+                continue
+            if not filename.endswith(".traj"):
+                continue
+            autoName = filename.removesuffix(".traj")
+
+            try:
+                # Check the path we're trying to load actually exists before handing to Choreo
+                if os.path.exists(os.path.join(wpilib.getDeployDirectory(), "choreo", autoName + ".traj")):
+                    trajectory = choreo.load_swerve_trajectory(autoName)
+                    if idx == 0:
+                        self.trajectoryChooser.setDefaultOption(autoName, trajectory)
+                    else:
+                        self.trajectoryChooser.addOption(autoName, trajectory)
+                else:
+                    ntutil.logAlert(self.badTrajectoryAlert, autoName)
+            except ValueError as err:
+                ntutil.logAlert(self.badTrajectoryAlert, err)

@@ -1,5 +1,5 @@
 import typing
-from typing import Generic, List, Type, TypeVar
+from typing import Any, Dict, Generic, List, Type, TypeVar
 
 import ntcore
 import wpilib
@@ -62,8 +62,33 @@ def getStructTopic(name: str, type: Type[T], defaultValue: T | None = None) -> _
 
 # Log entries
 
-def log(msg: str):
-    wpilib.DataLogManager.log(msg)
+def log(msg: Any):
+    """
+    Logs a message to both stdout and the /messages entry of NetworkTables
+    (visible when viewing log files).
+    """
+    wpilib.DataLogManager.log(f"{msg}")
+
+originalAlertText: Dict[wpilib.Alert, str] = {}
+
+def logAlert(alert: wpilib.Alert, msg: Any):
+    """
+    Enables an Alert and also logs an additional message. Useful for indicating
+    a specific value that caused an error, or to provide more context. Consider
+    using this whenever you would instead use a simple `ntutil.log`.
+
+    To avoid spam, this method will only log when the message changes.
+    """
+    global originalAlertText
+    
+    if alert not in originalAlertText:
+        originalAlertText[alert] = alert.getText()
+    
+    fullMsg = f"{originalAlertText[alert]}: {msg}"
+    if alert.getText() != fullMsg:
+        log(fullMsg)
+        alert.setText(fullMsg)
+    alert.set(True)
 
 def getBooleanArrayLog(name: str):
     return wpiutil.log.BooleanArrayLogEntry(wpilib.DataLogManager.getLog(), name)
