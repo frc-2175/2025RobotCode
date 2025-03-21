@@ -18,6 +18,7 @@ from chassisspeeds import ChassisSpeeds2175
 from swervemodule import SwerveModule
 from utils import RotationSlewRateLimiter
 
+from swerveheading import SwerveHeadingController
 
 class Drivetrain:
     def __init__(self):
@@ -54,9 +55,9 @@ class Drivetrain:
         # Choreo PID controllers
         self.x_controller = PIDController(0, 0, 0)
         self.y_controller = PIDController(0, 0, 0) 
-        self.heading_controller = PIDController(0, 0, 0)
+        self.choreo_heading_controller = PIDController(0, 0, 0)
 
-        self.heading_controller.enableContinuousInput(-math.pi, math.pi)
+        self.choreo_heading_controller.enableContinuousInput(-math.pi, math.pi)
 
         # PhotonVision
         # https://docs.photonvision.org/en/latest/docs/programming/photonlib/robot-pose-estimator.html#apriltags-and-photonposeestimator
@@ -82,6 +83,9 @@ class Drivetrain:
         self.speedLimiter = SlewRateLimiter(constants.kSpeedSlewRate) #m/s
         self.rotationLimiter = SlewRateLimiter(constants.kRotationSlewRate) #rad/s
         self.directionLimiter = RotationSlewRateLimiter(constants.kDirectionSlewRate) #rad/s
+
+        # Heading controller
+        self.headingController = SwerveHeadingController(self.gyro)
         
 
     def periodic(self):
@@ -170,7 +174,7 @@ class Drivetrain:
     def get_heading(self) -> Rotation2d:
         return self.gyro.getRotation2d()
 
-    def drive(self, xSpeed: float, ySpeed: float, turnSpeed: float):
+    def drive(self, xSpeed: float, ySpeed: float, turnSpeed: float, angle: Rotation2d | None = None):
         newSpeeds = ChassisSpeeds2175.fromFieldRelativeSpeeds(xSpeed, ySpeed, turnSpeed, self.gyro.getRotation2d())
 
         # If stopping the robot, preserve the old direction instead of going to
@@ -178,6 +182,11 @@ class Drivetrain:
         # because xSpeed and ySpeed are the deadbanded joystick values.
         if xSpeed == 0 and ySpeed == 0:
             newSpeeds.direction = self.currentChassisSpeeds.direction
+
+        if angle is not None:
+            self.headingController.setGoal(angle)
+
+        turnSpeed = self.headingController.update(xSpeed, ySpeed, turnSpeed)
 
         # Limit the overall max speed.
         if newSpeeds.speed > constants.kMaxSpeed:
