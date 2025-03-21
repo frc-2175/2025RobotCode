@@ -181,7 +181,8 @@ class ElevatorAndArm:
         what part of the arm will be moved to the desired height - either the
         center of the wheels for coral, or the end of the arm for algae.
 
-        Consider using `go_to_coral_preset` or `go_to_algae_preset` instead.
+        Consider using `go_to_coral_preset`, `go_to_algae_floor_preset`, or
+        `go_to_algae_dereef_preset` instead.
         """
         self.wristPositionSetpoint = angle
         radius = None
