@@ -1,11 +1,14 @@
-import rev
 import math
-import ntutil
+
+import rev
 import wpilib
-import constants
-from wpimath.kinematics import SwerveModuleState
 import wpimath.geometry
 from wpimath.geometry import Rotation2d
+from wpimath.kinematics import SwerveModuleState
+
+import constants
+import ntutil
+
 
 class SourceIntake:
     def __init__(self):

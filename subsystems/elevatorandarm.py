@@ -1,18 +1,22 @@
-import rev
 import math
-from wpimath.geometry import Translation2d
+
+import ntcore
+import rev
 import wpilib
-from wpilib import SmartDashboard
 import wpimath
 import wpimath.geometry
-from wpimath.kinematics import SwerveDrive4Kinematics, ChassisSpeeds, SwerveModuleState
-from wpimath.controller import ArmFeedforward
-import ntcore
 import wpimath.units
-import constants
-import utils
+from wpilib import SmartDashboard
+from wpimath.controller import ArmFeedforward
 from wpimath.filter import SlewRateLimiter
+from wpimath.geometry import Translation2d
+from wpimath.kinematics import (ChassisSpeeds, SwerveDrive4Kinematics,
+                                SwerveModuleState)
+
+import constants
 import ntutil
+import utils
+
 
 def wristEncoderToAngle(encoderPosition: float) -> float:
     return encoderPosition - constants.kWristAngleOffset

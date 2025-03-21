@@ -1,7 +1,7 @@
+import testutil
 from pyfrc.tests import *
 
 import utils
-import testutil
 
 # utils.clamp
 testutil.expecteq(utils.clamp(0, 1, 10), 1)

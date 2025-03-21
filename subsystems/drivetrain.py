@@ -1,19 +1,23 @@
-import navx
-import constants
 import math
-from wpimath.geometry import Translation2d, Rotation2d, Pose2d, Pose3d
-from wpimath.kinematics import SwerveDrive4Kinematics, ChassisSpeeds, SwerveModuleState, SwerveDrive4Odometry
-from wpimath.filter import SlewRateLimiter
-from wpimath.controller import PIDController
-from swervemodule import SwerveModule
-import utils
-from utils import RotationSlewRateLimiter
-from chassisspeeds import ChassisSpeeds2175
-from wpilib import DriverStation
-import ntutil
+
 import choreo.trajectory
+import navx
 from photonlibpy import PhotonCamera, PhotonPoseEstimator, PoseStrategy
-from robotpy_apriltag import AprilTagFieldLayout, AprilTagField
+from robotpy_apriltag import AprilTagField, AprilTagFieldLayout
+from wpilib import DriverStation
+from wpimath.controller import PIDController
+from wpimath.filter import SlewRateLimiter
+from wpimath.geometry import Pose2d, Pose3d, Rotation2d, Translation2d
+from wpimath.kinematics import (ChassisSpeeds, SwerveDrive4Kinematics,
+                                SwerveDrive4Odometry, SwerveModuleState)
+
+import constants
+import ntutil
+import utils
+from chassisspeeds import ChassisSpeeds2175
+from swervemodule import SwerveModule
+from utils import RotationSlewRateLimiter
+
 
 class Drivetrain:
     def __init__(self):

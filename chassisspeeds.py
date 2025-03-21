@@ -1,6 +1,8 @@
 import math
+
 from wpimath.geometry import Rotation2d
 from wpimath.kinematics import ChassisSpeeds
+
 
 class ChassisSpeeds2175:
     """
