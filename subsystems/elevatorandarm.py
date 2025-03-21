@@ -79,6 +79,9 @@ class ElevatorAndArm:
         self.elevatorSetpointTopic = ntutil.getFloatTopic("/Elevator/Setpoint/Actual")
         self.elevatorSlewedSetpointTopic = ntutil.getFloatTopic("/Elevator/Setpoint/Slewed")
 
+        # Alerts
+        self.badCoralLevelAlert = wpilib.Alert("Bad level commanded for coral; ignoring", wpilib.Alert.AlertType.kWarning)
+
         # Arm hardware
         self.wristMotor = rev.SparkMax(41, rev.SparkLowLevel.MotorType.kBrushless)
         self.armOuterWheelMotor = rev.SparkMax(42, rev.SparkLowLevel.MotorType.kBrushless)
@@ -173,6 +176,14 @@ class ElevatorAndArm:
         self.mechDesired.update(elevatorHeight=slewedElevatorSetpoint, armAngle=safeWristPosition)
 
     def set_arm_position(self, height: float, angle: float, mode: int):
+        """
+        Directly set the target height and angle of the arm. The mode controls
+        what part of the arm will be moved to the desired height - either the
+        center of the wheels for coral, or the end of the arm for algae.
+
+        Consider using `go_to_coral_preset`, `go_to_algae_floor_preset`, or
+        `go_to_algae_dereef_preset` instead.
+        """
         self.wristPositionSetpoint = angle
         radius = None
         if mode == constants.kCoralMode:
@@ -182,6 +193,30 @@ class ElevatorAndArm:
         else:
             print("ERROR! Unknown mode!")
         self.elevatorSetpoint = self.compute_elevator_height(height, angle, radius)
+
+    def go_to_coral_preset(self, level: int):
+        coralPresets = {
+            1: (constants.kElevatorL1, constants.kWristUprightAngle),
+            2: (constants.kElevatorL2, constants.kWristCoralScoreAngle),
+            3: (constants.kElevatorL3, constants.kWristCoralScoreAngle),
+            4: (constants.kElevatorL4, constants.kWristHighCoralScoreAngle),
+        }
+
+        if level not in coralPresets:
+            ntutil.logAlert(self.badCoralLevelAlert, level)
+            return
+        elevatorHeight, armAngle = coralPresets[level]
+        self.set_arm_position(elevatorHeight, armAngle, constants.kCoralMode)
+
+    def go_to_algae_floor_preset(self):
+        self.set_arm_position(constants.kElevatorAlgaeGround, constants.kWristAlgaeGround, constants.kAlgaeMode)
+
+    def go_to_algae_dereef_preset(self, high: bool):
+        if high:
+            elevatorHeight = constants.kElevatorAlgaeHigh
+        else:
+            elevatorHeight = constants.kElevatorAlgaeLow
+        self.set_arm_position(elevatorHeight, constants.kWristAlgaeDereef, constants.kAlgaeMode)
 
     def move_coral(self, speed: float):
         """
