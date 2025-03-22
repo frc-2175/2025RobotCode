@@ -23,7 +23,11 @@
             "/SmartDashboard",
             "/ChassisSpeeds",
             "/ChassisSpeeds/Current",
-            "/SmartDashboard/Auto Trajectory"
+            "/SmartDashboard/Auto Trajectory",
+            "/Hanger",
+            "/Hanger/Setpoint",
+            "/Intake",
+            "/Wrist"
           ]
         },
         "tabs": {
@@ -36,21 +40,6 @@
               "controllerUUID": "kxy84ed8amgm3l6n5nq6yrc1fwsaibw0",
               "renderer": "#/",
               "controlsHeight": 0
-            },
-            {
-              "type": 8,
-              "title": "Joysticks",
-              "controller": [
-                "Generic Joystick",
-                "Generic Joystick",
-                "Logitech F310",
-                "None",
-                "None",
-                "None"
-              ],
-              "controllerUUID": "bl0a0cv1nzlynk73i0qk6dppe6b1kuaa",
-              "renderer": null,
-              "controlsHeight": 85
             },
             {
               "type": 9,
@@ -200,54 +189,23 @@
                 "cameraIndex": -1,
                 "orbitFov": 50,
                 "cameraPosition": [
-                  4.719823777882835,
-                  4.435776761744,
-                  -7.983362165461168
+                  3.737201659599786,
+                  9.574841721728971,
+                  -1.5577520718774336
                 ],
                 "cameraTarget": [
-                  2.1286539837618013,
-                  0.5366698186801937,
-                  -1.1833269778098559
+                  3.6603583331546097,
+                  -1.885005252170395,
+                  2.4149373805358043
                 ]
               },
               "controlsHeight": 200
             },
             {
               "type": 1,
-              "title": "Elevator/Arm",
+              "title": "Elevator/Arm Graph",
               "controller": {
-                "leftSources": [
-                  {
-                    "type": "smooth",
-                    "logKey": "NT:/Elevator/Height",
-                    "logType": "Number",
-                    "visible": true,
-                    "options": {
-                      "color": "#2b66a2",
-                      "size": "normal"
-                    }
-                  },
-                  {
-                    "type": "stepped",
-                    "logKey": "NT:/Elevator/Setpoint/Actual",
-                    "logType": "Number",
-                    "visible": true,
-                    "options": {
-                      "color": "#af2437",
-                      "size": "normal"
-                    }
-                  },
-                  {
-                    "type": "stepped",
-                    "logKey": "NT:/Elevator/Setpoint/Slewed",
-                    "logType": "Number",
-                    "visible": true,
-                    "options": {
-                      "color": "#80588e",
-                      "size": "normal"
-                    }
-                  }
-                ],
+                "leftSources": [],
                 "rightSources": [
                   {
                     "type": "smooth",
@@ -303,6 +261,107 @@
               "controlsHeight": 200
             },
             {
+              "type": 1,
+              "title": "Intake Graph",
+              "controller": {
+                "leftSources": [
+                  {
+                    "type": "stepped",
+                    "logKey": "NT:/Intake/Sensor",
+                    "logType": "Number",
+                    "visible": true,
+                    "options": {
+                      "color": "#2b66a2",
+                      "size": "normal"
+                    }
+                  }
+                ],
+                "rightSources": [
+                  {
+                    "type": "stepped",
+                    "logKey": "NT:/Intake/OuterWheelVelocity",
+                    "logType": "Number",
+                    "visible": true,
+                    "options": {
+                      "color": "#af2437",
+                      "size": "normal"
+                    }
+                  }
+                ],
+                "discreteSources": [
+                  {
+                    "type": "stripes",
+                    "logKey": "NT:/Intake/Detected",
+                    "logType": "Boolean",
+                    "visible": true,
+                    "options": {
+                      "color": "#e5b31b"
+                    }
+                  }
+                ],
+                "leftLockedRange": null,
+                "rightLockedRange": null,
+                "leftUnitConversion": {
+                  "type": null,
+                  "factor": 1
+                },
+                "rightUnitConversion": {
+                  "type": null,
+                  "factor": 1
+                },
+                "leftFilter": 0,
+                "rightFilter": 0
+              },
+              "controllerUUID": "usk5q1yofq2pxs23vquzptgsza554bbm",
+              "renderer": null,
+              "controlsHeight": 200
+            },
+            {
+              "type": 1,
+              "title": "Hanger Graph",
+              "controller": {
+                "leftSources": [
+                  {
+                    "type": "stepped",
+                    "logKey": "NT:/Hanger/Angle",
+                    "logType": "Number",
+                    "visible": true,
+                    "options": {
+                      "color": "#2b66a2",
+                      "size": "normal"
+                    }
+                  },
+                  {
+                    "type": "stepped",
+                    "logKey": "NT:/Hanger/Setpoint/Actual",
+                    "logType": "Number",
+                    "visible": true,
+                    "options": {
+                      "color": "#e5b31b",
+                      "size": "normal"
+                    }
+                  }
+                ],
+                "rightSources": [],
+                "discreteSources": [],
+                "leftLockedRange": null,
+                "rightLockedRange": null,
+                "leftUnitConversion": {
+                  "type": null,
+                  "factor": 1
+                },
+                "rightUnitConversion": {
+                  "type": null,
+                  "factor": 1
+                },
+                "leftFilter": 0,
+                "rightFilter": 0
+              },
+              "controllerUUID": "whjkyvzqaf9deelh8yzm4htyj71ch7nz",
+              "renderer": null,
+              "controlsHeight": 200
+            },
+            {
               "type": 10,
               "title": "Elevator/Arm 2D",
               "controller": [
@@ -324,6 +383,21 @@
               "controllerUUID": "4akxw6xj5qtqt8qqm847zu85o2fw7nkf",
               "renderer": null,
               "controlsHeight": 200
+            },
+            {
+              "type": 8,
+              "title": "Joysticks",
+              "controller": [
+                "Generic Joystick",
+                "Generic Joystick",
+                "Logitech F310",
+                "None",
+                "None",
+                "None"
+              ],
+              "controllerUUID": "bl0a0cv1nzlynk73i0qk6dppe6b1kuaa",
+              "renderer": null,
+              "controlsHeight": 85
             },
             {
               "type": 5,
