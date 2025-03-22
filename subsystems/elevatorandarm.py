@@ -1,4 +1,5 @@
 import math
+from typing import Literal
 
 import ntcore
 import rev
@@ -86,6 +87,7 @@ class ElevatorAndArm:
         self.wristMotor = rev.SparkMax(41, rev.SparkLowLevel.MotorType.kBrushless)
         self.armOuterWheelMotor = rev.SparkMax(42, rev.SparkLowLevel.MotorType.kBrushless)
         self.armInnerWheelMotor = rev.SparkMax(43, rev.SparkLowLevel.MotorType.kBrushless)
+        self.intakeSensor = wpilib.AnalogInput(3)
 
         self.wristEncoder = self.wristMotor.getAbsoluteEncoder()
         self.wristController = self.wristMotor.getClosedLoopController()
@@ -138,6 +140,8 @@ class ElevatorAndArm:
         self.wristAngleSetpointTopic = ntutil.getFloatTopic("/Wrist/AngleSetpoint")
         self.wristSafePositionTopic = ntutil.getFloatTopic("/Wrist/SafePosition")
         self.wristFFTopic = ntutil.getFloatTopic("/Wrist/FF")
+        self.intakeSensorTopic = ntutil.getFloatTopic("/Intake/Sensor")
+        self.coralDetectedTopic = ntutil.getBooleanTopic("/Intake/Detected")
 
         # Mechanism2d telemetry
         self.mechActual = self.Mechanism("ElevatorMechanism/Actual", wpilib.Color.kRed)
@@ -150,8 +154,12 @@ class ElevatorAndArm:
         self.elevatorSetpoint = 0
         self.elevatorSetpointLimiter = SlewRateLimiter(1) #m/s
         self.wristPositionSetpoint = 0.0
+        self.intakeState: Literal["initial"] | Literal["stopped"] = "initial"
+        self.intakeSpeed = 0
+        self.intakeMode: Literal["coral"] | Literal["algae"] = "coral"
 
     def periodic(self):
+        # Elevator
         slewedElevatorSetpoint = self.elevatorSetpointLimiter.calculate(self.elevatorSetpoint)
         self.elevatorController.setReference(slewedElevatorSetpoint, rev.SparkMax.ControlType.kPosition, arbFeedforward=0)
         
@@ -159,6 +167,7 @@ class ElevatorAndArm:
         self.elevatorSlewedSetpointTopic.set(slewedElevatorSetpoint)
         self.elevatorHeightTopic.set(self.elevatorEncoder.getPosition())
 
+        # Wrist
         self.wristAngleTopic.set(wristEncoderToAngle(self.wristEncoder.getPosition()))
         self.wristAngleRawTopic.set(self.wristEncoder.getPosition())
         self.wristAngleSetpointTopic.set(self.wristPositionSetpoint)
@@ -170,6 +179,31 @@ class ElevatorAndArm:
 
         self.wristSafePositionTopic.set(safeWristPosition)
         self.wristFFTopic.set(armFF)
+
+        # Intake wheels
+        if self.intakeState == "initial":
+            if self.intakeMode == "coral":
+                self.armOuterWheelMotor.set(self.intakeSpeed * constants.kSquishyWheelCoralSpeed)
+                self.armInnerWheelMotor.set(-self.intakeSpeed * constants.kSquishyWheelCoralSpeed)
+            elif self.intakeMode == "algae":
+                self.armOuterWheelMotor.set(self.intakeSpeed * constants.kSquishyWheelAlgaeSpeed)
+                self.armInnerWheelMotor.set(self.intakeSpeed * constants.kSquishyWheelAlgaeSpeed)
+            else:
+                ntutil.log(f"ERROR! Bad intake mode: {self.intakeMode}")
+                self.armOuterWheelMotor.set(0)
+                self.armInnerWheelMotor.set(0)
+
+            if self.coral_detected():
+                self.intakeState = "stopped"
+        elif self.intakeState == "stopped":
+            self.armOuterWheelMotor.set(0)
+            self.armInnerWheelMotor.set(0)
+            
+            if self.intakeSpeed == 0:
+                self.intakeState = "initial"
+        
+        self.intakeSensorTopic = self.intakeSensor.getVoltage()
+        self.coralDetectedTopic = self.coral_detected()
 
         # Update Mechanism2d telemetry
         self.mechActual.update(elevatorHeight=self.get_elevator_position(), armAngle=self.get_wrist_position())
@@ -224,8 +258,8 @@ class ElevatorAndArm:
         -1 to 1, where positive means intake -> reef. Speed will be limited by the top
         speed in constants.py.
         """
-        self.armOuterWheelMotor.set(speed * constants.kSquishyWheelCoralSpeed)
-        self.armInnerWheelMotor.set(-speed * constants.kSquishyWheelCoralSpeed)
+        self.intakeSpeed = speed
+        self.intakeMode = "coral"
         pass
 
     def move_algae(self, speed: float):
@@ -234,8 +268,8 @@ class ElevatorAndArm:
         -1 to 1, where positive means robot -> processor. Speed will be limited by the
         top speed in constants.py.
         """
-        self.armOuterWheelMotor.set(speed * constants.kSquishyWheelAlgaeSpeed)
-        self.armInnerWheelMotor.set(speed * constants.kSquishyWheelAlgaeSpeed)
+        self.intakeSpeed = speed
+        self.intakeMode = "algae"
         pass
 
     def get_wrist_position(self) -> float:
@@ -284,6 +318,12 @@ class ElevatorAndArm:
 
     def compute_elevator_height(self, armHeight, angle, radius):
         return armHeight - constants.kArmHeightInCarriage - constants.kElevatorBaseHeight - radius * math.cos(angle)
+    
+    def coral_detected(self):
+        if 1.5 < self.intakeSensor.getVoltage() < 2.5:
+            return True
+        else:
+            return False
 
     class Mechanism:
         """

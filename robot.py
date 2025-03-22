@@ -21,7 +21,6 @@ from gentools import doneable
 from subsystems.drivetrain import Drivetrain
 from subsystems.elevatorandarm import ElevatorAndArm
 from subsystems.hanger import Hanger
-from subsystems.sourceintake import SourceIntake
 
 # from urcl import URCL
 
@@ -40,7 +39,6 @@ class MyRobot(wpilib.TimedRobot):
 
         # Subsystems
         self.drivetrain = Drivetrain()
-        self.sourceintake = SourceIntake()
         self.elevatorandarm = ElevatorAndArm()
         self.hanger = Hanger()
 
@@ -93,7 +91,6 @@ class MyRobot(wpilib.TimedRobot):
 
     def robotPeriodic(self):
         self.drivetrain.periodic()
-        self.sourceintake.periodic()
         self.elevatorandarm.periodic()
         self.hanger.periodic()
 
