@@ -4,6 +4,7 @@ import math
 import wpilib
 import ntcore
 from wpimath.filter import SlewRateLimiter
+import wpimath.units
 import ntutil
 import utils
 import constants
@@ -16,6 +17,8 @@ class Hanger:
         # self.hangerEncoder = self.hangerMotor.getAbsoluteEncoder()
         self.hangerEncoder = self.hangerMotor.getEncoder()
 
+        self.intakeSolenoid = rev.SparkMax(62, rev.SparkLowLevel.MotorType.kBrushed)
+
         hangerMotorConfig = rev.SparkMaxConfig()
         (
             hangerMotorConfig
@@ -25,21 +28,30 @@ class Hanger:
         (
             hangerMotorConfig
                 .closedLoop
-                    .pid(0.1, 0, 0)
-                    .setFeedbackSensor(rev.ClosedLoopConfig.FeedbackSensor.kAbsoluteEncoder)
+                    .pid(0.6, 0, 0)
+                    .setFeedbackSensor(rev.ClosedLoopConfig.FeedbackSensor.kPrimaryEncoder)
         )
         (
             hangerMotorConfig
                 .encoder
                     .positionConversionFactor(constants.kHangerMotorReduction * math.pi * 2)
         )
+        # (
+        #     hangerMotorConfig
+        #         .absoluteEncoder
+        #             .positionConversionFactor(math.pi * 2)
+        #             .zeroCentered(True)
+        # )
+
+        intakeSolenoidConfig = rev.SparkMaxConfig()
+
         (
-            hangerMotorConfig
-                .absoluteEncoder
-                    .positionConversionFactor(math.pi * 2)
-                    .zeroCentered(True)
+            intakeSolenoidConfig
+                .smartCurrentLimit(40)
         )
+
         self.hangerMotor.configure(hangerMotorConfig, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
+        self.intakeSolenoid.configure(intakeSolenoidConfig, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
 
         # Telemetry
         self.setpointTopic = ntutil.getFloatTopic("/Hanger/Setpoint/Actual")
@@ -64,3 +76,5 @@ class Hanger:
         Set the target position of the hanger in radians.
         """
         self.setpoint = setpoint
+
+    
