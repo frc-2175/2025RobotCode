@@ -2,13 +2,12 @@
 from functools import wraps
 from typing import Callable, Iterator, ParamSpec, Set
 
+import wpilib
 from commands2 import Command, CommandScheduler
 from commands2.subsystem import Subsystem
-import wpilib
 
-from gentools import doneable
 import ntutil
-
+from gentools import doneable
 
 P = ParamSpec("P")
 

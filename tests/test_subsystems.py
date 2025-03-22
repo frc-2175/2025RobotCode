@@ -1,11 +1,10 @@
-from pyfrc.tests import *
-
-import sys
-import pkgutil
 import importlib
 import inspect
+import pkgutil
+import sys
 
 import rev
+from pyfrc.tests import *
 
 import subsystems
 

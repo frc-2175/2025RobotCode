@@ -32,3 +32,6 @@ requires = [
     "photonlibpy",
     "sleipnirgroup-choreolib",
 ]
+
+[tool.pyright]
+typeCheckingMode = "standard"

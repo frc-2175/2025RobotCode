@@ -1,5 +1,6 @@
 import math
 
+
 def lerp(a: float, b: float, t: float) -> float:
     return (1-t) * a + t * b
 
@@ -57,9 +58,8 @@ def angleDifference(angleA:float, angleB:float) -> float:
         return difference
     
 class RotationSlewRateLimiter:
-    current = 0
-
     def __init__(self, rateLimit: float): # radians per second
+        self.current: float = 0
         self.rateLimit = rateLimit
     
     def calculate(self, target: float, force: bool = False): # radians

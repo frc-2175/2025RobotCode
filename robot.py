@@ -1,36 +1,36 @@
-from typing import Callable
-
-import choreo.trajectory
-from coroutinecommand import RestartableCommand, commandify, sleep
-from gentools import doneable
-import ntutil
-from wpimath.geometry import Translation2d
-import wpilib
-from wpilib import SmartDashboard, Alert
 import math
-import wpimath
-import wpimath.geometry
-from wpimath.kinematics import SwerveDrive4Kinematics, ChassisSpeeds, SwerveModuleState
-import wpimath.units
-from commands2 import Command, CommandScheduler
-import choreo
-from wpilib import DriverStation
-from wpimath.geometry import Translation2d, Rotation2d, Pose2d, Pose3d
 import os
 import os.path
-# from urcl import URCL
+from typing import Any, Callable, Dict, Iterable, List
+
+import choreo
+import choreo.trajectory
+import wpilib
+import wpimath
+import wpimath.geometry
+import wpimath.units
+from wpilib import Alert, DriverStation, SmartDashboard
+from wpimath.geometry import Pose2d, Pose3d, Rotation2d, Translation2d
+from wpimath.kinematics import (ChassisSpeeds, SwerveDrive4Kinematics,
+                                SwerveModuleState)
+
 import constants
+import ntutil
+import utils
+from gentools import doneable
 from subsystems.drivetrain import Drivetrain
-from subsystems.sourceintake import SourceIntake
 from subsystems.elevatorandarm import ElevatorAndArm
 from subsystems.hanger import Hanger
-import utils
+
+# from urcl import URCL
+
 
 class MyRobot(wpilib.TimedRobot):
-    def robotInit(self):
-        wpilib.DataLogManager.start()
-        wpilib.DriverStation.startDataLog(wpilib.DataLogManager.getLog())
-        # URCL.start()
+    def init(self):
+        """
+        A hacky replacement for __init__ that is called from robotInit to
+        satisfy the needs of robotpy tests.
+        """
 
         # Joysticks and input
         self.leftStick = wpilib.Joystick(0)
@@ -39,54 +39,34 @@ class MyRobot(wpilib.TimedRobot):
 
         # Subsystems
         self.drivetrain = Drivetrain()
-        self.sourceintake = SourceIntake()
         self.elevatorandarm = ElevatorAndArm()
         self.hanger = Hanger()
 
         # Auto and commands
-        self.scheduler = CommandScheduler.getInstance()
         self.autoTimer = wpilib.Timer()
-        self.initializeSchedulerLogging()
+        self.trajectoryChooser = wpilib.SendableChooser()
+        self.trajectory: choreo.trajectory.SwerveTrajectory | None = None
+        self.trajectoryAlerts: List[Alert] = [] # keep things from getting garbage collected
+        SmartDashboard.putData("Auto Trajectory", self.trajectoryChooser)
 
-        # In order to play nice with PathPlanner's autos, which are Command-only,
-        # we always store Commands in our auto chooser. However, since we want our
-        # autos to be restartable, we use these wrappers to ensure that all our auto
-        # options can be wrapped in RestartableCommand.
-        self.autoChooser = wpilib.SendableChooser()
-        self.trajectory: choreo.trajectory.SwerveTrajectory = None
-        choreoDir = os.path.join(wpilib.getDeployDirectory(), "choreo")
-        for idx, filename in enumerate(os.listdir(choreoDir)):
-            if not os.path.isfile(os.path.join(choreoDir, filename)):
-                continue
-            if not filename.endswith(".traj"):
-                continue
-            autoName = filename.removesuffix(".traj")
-
-            try:
-                # Check the path we're trying to load actually exists before handing to Choreo
-                if os.path.exists(os.path.join(wpilib.getDeployDirectory(), "choreo", autoName + ".traj")):
-                    trajectory = choreo.load_swerve_trajectory(autoName)
-                    if idx == 0:
-                        self.autoChooser.setDefaultOption(autoName, trajectory)
-                    else:
-                        self.autoChooser.addOption(autoName, trajectory)
-                else:
-                    ntutil.log(f"Choreo path not found: {autoName}")
-                    self.badTrajectoryAlert.setText(f"Choreo path not found: {autoName}")
-                    self.badTrajectoryAlert.set(True)
-            except ValueError as err:
-                ntutil.log(f"Error constructing Choreo trajectory: {err}")
-                self.badTrajectoryAlert.setText(f"Error constructing Choreo trajectory: {err}")
-                self.badTrajectoryAlert.set(True)
-        SmartDashboard.putData("Auto Trajectory", self.autoChooser)
+        self.autoEvents: Dict[str, Callable[[], None]] = {
+            "c1": lambda: self.elevatorandarm.go_to_coral_preset(level=1),
+            "c2": lambda: self.elevatorandarm.go_to_coral_preset(level=2),
+            "c3": lambda: self.elevatorandarm.go_to_coral_preset(level=3),
+            "c4": lambda: self.elevatorandarm.go_to_coral_preset(level=4),
+        }
 
         # Alerts
         self.badTrajectoryAlert = Alert("Choreo path not found", Alert.AlertType.kError)
         self.noAutoAlert = Alert("No autonomous trajectory", Alert.AlertType.kWarning)
+        self.noAutoSampleAlert = Alert("No sample for autonomous trajectory; stopping bot", Alert.AlertType.kWarning)
+        self.scoringModeImproperValue = Alert("Variable scoringMode improper value (expected kCoralMode or kAlgaeMode)", Alert.AlertType.kError)
+        self.algaeReverseImproperValue = Alert("Variable algaeReverse improper value (expected True or False)", Alert.AlertType.kError)
 
         # Control state
         self.scoringMode = constants.kCoralMode
-        self.algaeReverse = False
+        self.algaeReverse: bool = False
+        self.previousAutoTime: float = 0
 
         # Controls telemetry
         self.scoringModeTopic = ntutil.getStringTopic("/Controls/ScoringMode")
@@ -95,16 +75,22 @@ class MyRobot(wpilib.TimedRobot):
         self.autoTimerTopic = ntutil.getFloatTopic("/Auto/Timer")
         self.autoChassisSpeedsTopic = ntutil.getStructTopic("/Auto/ChassisSpeeds", ChassisSpeeds)
         self.autoPoseTopic = ntutil.getStructTopic("/Auto/Pose", Pose2d)
-        self.autoHasSampleTopic = ntutil.getBooleanTopic("/Auto/HasSample")
+
+
+    def robotInit(self):
+        wpilib.DataLogManager.start()
+        wpilib.DriverStation.startDataLog(wpilib.DataLogManager.getLog())
+        # URCL.start()
+
+        self.init()
+        self.loadChoreoTrajectories()
 
         # Final initialization
         self.elevatorandarm.set_arm_position(constants.kElevatorL1, constants.kWristUprightAngle, constants.kCoralMode)
 
-    def robotPeriodic(self):
-        self.scheduler.run()
 
+    def robotPeriodic(self):
         self.drivetrain.periodic()
-        self.sourceintake.periodic()
         self.elevatorandarm.periodic()
         self.hanger.periodic()
 
@@ -126,28 +112,41 @@ class MyRobot(wpilib.TimedRobot):
 
 
     def autonomousInit(self) -> None:
-        self.scheduler.cancelAll()
-
-        self.trajectory = self.autoChooser.getSelected()
+        self.trajectory = self.trajectoryChooser.getSelected()
         if self.trajectory:
             initial_pose = self.trajectory.get_initial_pose(wpilib.DriverStation.getAlliance() == wpilib.DriverStation.Alliance.kRed)
             if initial_pose:
                 self.drivetrain.reset_pose(initial_pose)
             self.autoTimer.restart()
+            self.previousAutoTime = 0
 
 
     def autonomousPeriodic(self) -> None:
+        currentAutoTime = self.autoTimer.get()
+        self.autoTimerTopic.set(currentAutoTime)
+
         self.noAutoAlert.set(not self.trajectory)
-        self.autoTimerTopic.set(self.autoTimer.get())
         if self.trajectory:
             sample = self.trajectory.sample_at(self.autoTimer.get(), (wpilib.DriverStation.getAlliance() == wpilib.DriverStation.Alliance.kRed))
-            self.autoHasSampleTopic.set(bool(sample))
+            self.noAutoSampleAlert.set(not sample)
             if sample:
                 self.drivetrain.follow_choreo_trajectory(sample)
                 self.autoChassisSpeedsTopic.set(sample.get_chassis_speeds())
                 self.autoPoseTopic.set(sample.get_pose())
+
+                for event in self.trajectory.events:
+                    if self.previousAutoTime <= event.timestamp < currentAutoTime:
+                        if event.event in self.autoEvents:
+                            command = self.autoEvents[event.event] # Get the command from our map
+                            command() # Run it!
+                        else:
+                            # We are ok to just log this here because we produce alerts during robotInit.
+                            ntutil.log(f"Autonomous event not recognized; skipping: {event.event}")
             else:
+                # We should always have samples. If not, stop the bot.
                 self.drivetrain.drive(0, 0, 0)
+        
+        self.previousAutoTime = currentAutoTime
 
 
     def teleopPeriodic(self) -> None:
@@ -169,29 +168,29 @@ class MyRobot(wpilib.TimedRobot):
         if self.scoringMode == constants.kCoralMode:
             if self.gamePad.getAButton():
                 #Set Elevator to L1/Handoff Height
-                self.elevatorandarm.set_arm_position(constants.kElevatorL1, constants.kWristUprightAngle, constants.kCoralMode)
+                self.elevatorandarm.go_to_coral_preset(level=1)
             elif self.gamePad.getBButton():
                 #Set Elevator to L2 Height
-                self.elevatorandarm.set_arm_position(constants.kElevatorL2, constants.kWristCoralScoreAngle, constants.kCoralMode)
+                self.elevatorandarm.go_to_coral_preset(level=2)
             elif self.gamePad.getXButton():
                 #Set Elevator to L3 Height
-                self.elevatorandarm.set_arm_position(constants.kElevatorL3, constants.kWristCoralScoreAngle, constants.kCoralMode)
+                self.elevatorandarm.go_to_coral_preset(level=3)
             elif self.gamePad.getYButton():
                 #Set Elevator to L4 Height
-                self.elevatorandarm.set_arm_position(constants.kElevatorL4, constants.kWristHighCoralScoreAngle, constants.kCoralMode)
+                self.elevatorandarm.go_to_coral_preset(level=4)
 
             coralSpeed = wpimath.applyDeadband(gamePieceSpeed, 0.2)
             self.elevatorandarm.move_coral(coralSpeed)
 
         elif self.scoringMode == constants.kAlgaeMode:
             if self.gamePad.getAButton():
-                self.elevatorandarm.set_arm_position(constants.kElevatorAlgaeGround, constants.kWristAlgaeGround, constants.kAlgaeMode)
+                self.elevatorandarm.go_to_algae_floor_preset()
                 self.algaeReverse = False
             elif self.gamePad.getXButton() or self.gamePad.getBButton():
+                self.elevatorandarm.go_to_algae_dereef_preset(high=False)
                 self.algaeReverse = False
-                self.elevatorandarm.set_arm_position(constants.kElevatorAlgaeLow, constants.kWristAlgaeDereef, constants.kAlgaeMode)
             elif self.gamePad.getYButton():
-                self.elevatorandarm.set_arm_position(constants.kElevatorAlgaeHigh, constants.kWristAlgaeDereef, constants.kAlgaeMode)
+                self.elevatorandarm.go_to_algae_dereef_preset(high=True)
                 self.algaeReverse = True
             
             if self.algaeReverse == True:
@@ -199,14 +198,37 @@ class MyRobot(wpilib.TimedRobot):
             elif self.algaeReverse == False:
                 self.elevatorandarm.move_algae(-gamePieceSpeed)
             else:
-                print(f"Variable algaeReverse improper value: {self.algaeReverse}; expected True or False")
+                ntutil.logAlert(self.algaeReverseImproperValue, self.algaeReverse)
 
         else:
-            print(f"Variable scoringMode improper value: {self.scoringMode}; expected Coral or Algae")
+            ntutil.logAlert(self.scoringModeImproperValue, self.scoringMode)
 
-    # ================= UTILITY METHODS =================
+    # ================= SETUP METHODS =================
 
-    def initializeSchedulerLogging(self):
-        self.scheduler.onCommandInitialize(lambda command: ntutil.log(f"{command.getName()}: Initialized"))
-        self.scheduler.onCommandInterrupt(lambda command: ntutil.log(f"{command.getName()}: Interrupted"))
-        self.scheduler.onCommandFinish(lambda command: ntutil.log(f"{command.getName()}: Finished"))
+    def loadChoreoTrajectories(self):
+        choreoDir = os.path.join(wpilib.getDeployDirectory(), "choreo")
+        for idx, filename in enumerate(os.listdir(choreoDir)):
+            if not os.path.isfile(os.path.join(choreoDir, filename)):
+                continue
+            if not filename.endswith(".traj"):
+                continue
+            autoName = filename.removesuffix(".traj")
+
+            try:
+                # Check the path we're trying to load actually exists before handing to Choreo
+                if os.path.exists(os.path.join(wpilib.getDeployDirectory(), "choreo", autoName + ".traj")):
+                    trajectory = choreo.load_swerve_trajectory(autoName)
+                    if idx == 0:
+                        self.trajectoryChooser.setDefaultOption(autoName, trajectory)
+                    else:
+                        self.trajectoryChooser.addOption(autoName, trajectory)
+
+                    for event in trajectory.events:
+                        if event.event not in self.autoEvents:
+                            alert = Alert(f"Invalid event in \"{autoName}\": {event.event}", Alert.AlertType.kWarning)
+                            alert.set(True)
+                            self.trajectoryAlerts.append(alert)
+                else:
+                    ntutil.logAlert(self.badTrajectoryAlert, autoName)
+            except ValueError as err:
+                ntutil.logAlert(self.badTrajectoryAlert, err)

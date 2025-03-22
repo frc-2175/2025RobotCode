@@ -1,19 +1,24 @@
-import navx
-import constants
 import math
-from wpimath.geometry import Translation2d, Rotation2d, Pose2d, Pose3d
-from wpimath.kinematics import SwerveDrive4Kinematics, ChassisSpeeds, SwerveModuleState, SwerveDrive4Odometry
-from wpimath.filter import SlewRateLimiter
-from wpimath.controller import PIDController
-from swervemodule import SwerveModule
-import utils
-from utils import RotationSlewRateLimiter
-from chassisspeeds import ChassisSpeeds2175
-from wpilib import DriverStation
-import ntutil
-import choreo
+
+import choreo.trajectory
+import navx
 from photonlibpy import PhotonCamera, PhotonPoseEstimator, PoseStrategy
-from robotpy_apriltag import AprilTagFieldLayout, AprilTagField
+from robotpy_apriltag import AprilTagField, AprilTagFieldLayout
+from wpilib import DriverStation
+from wpimath.controller import PIDController
+from wpimath.filter import SlewRateLimiter
+from wpimath.geometry import Pose2d, Pose3d, Rotation2d, Translation2d
+from wpimath.kinematics import (ChassisSpeeds, SwerveDrive4Kinematics,
+                                SwerveDrive4Odometry, SwerveModuleState)
+
+import constants
+import ntutil
+import utils
+from chassisspeeds import ChassisSpeeds2175
+from swervemodule import SwerveModule
+from utils import RotationSlewRateLimiter
+
+from swerveheading import SwerveHeadingController
 
 class Drivetrain:
     def __init__(self):
@@ -44,9 +49,26 @@ class Drivetrain:
                 self.backLeftSwerveModule.getPosition(),
                 self.backRightSwerveModule.getPosition(),
             ),
-            # Initial pose of the robot, TODO, set from vision
-            Pose2d(0, 0, self.gyro.getRotation2d())
+            Pose2d(0, 0, self.gyro.getRotation2d()) # Initial pose of the robot (will be continuously adjusted by vision)
         )
+
+        # Choreo PID controllers
+        self.x_controller = PIDController(0, 0, 0)
+        self.y_controller = PIDController(0, 0, 0) 
+        self.choreo_heading_controller = PIDController(0, 0, 0)
+
+        self.choreo_heading_controller.enableContinuousInput(-math.pi, math.pi)
+
+        # PhotonVision
+        # https://docs.photonvision.org/en/latest/docs/programming/photonlib/robot-pose-estimator.html#apriltags-and-photonposeestimator
+        # self.camera = PhotonCamera("vision_camera")
+
+        # self.cameraPoseEst = PhotonPoseEstimator(
+        #     AprilTagFieldLayout.loadField(AprilTagField.k2025ReefscapeWelded),
+        #     PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
+        #     self.camera,
+        #     constants.kRobotToCam
+        # )
 
         # Telemetry
         self.desiredSwerveStatesTopic = ntutil.getStructArrayTopic("/SwerveStates/Desired", SwerveModuleState)
@@ -62,23 +84,8 @@ class Drivetrain:
         self.rotationLimiter = SlewRateLimiter(constants.kRotationSlewRate) #rad/s
         self.directionLimiter = RotationSlewRateLimiter(constants.kDirectionSlewRate) #rad/s
 
-        # Choreo PID controllers
-        self.x_controller = PIDController(0, 0, 0)
-        self.y_controller = PIDController(0, 0, 0) 
-        self.heading_controller = PIDController(0, 0, 0)
-
-        self.heading_controller.enableContinuousInput(-math.pi, math.pi)
-
-        # PhotonVision
-        # https://docs.photonvision.org/en/latest/docs/programming/photonlib/robot-pose-estimator.html#apriltags-and-photonposeestimator
-        # self.camera = PhotonCamera("vision_camera")
-
-        # self.cameraPoseEst = PhotonPoseEstimator(
-        #     AprilTagFieldLayout.loadField(AprilTagField.k2025ReefscapeWelded),
-        #     PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
-        #     self.camera,
-        #     constants.kRobotToCam
-        # )
+        # Heading controller
+        self.headingController = SwerveHeadingController(self.gyro)
         
 
     def periodic(self):
@@ -152,10 +159,10 @@ class Drivetrain:
         )
 
         self.robotPoseTopic.set(self.odometry.getPose())
-        try:
-            self.visionPoseTopic.set(self.cameraPoseEst.update().estimatedPose)
-        except:
-            pass
+        # try:
+        #     self.visionPoseTopic.set(self.cameraPoseEst.update().estimatedPose)
+        # except:
+        #     pass
 
     def reset_pose(self, pose: Pose2d):
         self.odometry.resetPose(pose)
@@ -167,7 +174,7 @@ class Drivetrain:
     def get_heading(self) -> Rotation2d:
         return self.gyro.getRotation2d()
 
-    def drive(self, xSpeed: float, ySpeed: float, turnSpeed: float):
+    def drive(self, xSpeed: float, ySpeed: float, turnSpeed: float, angle: Rotation2d | None = None):
         newSpeeds = ChassisSpeeds2175.fromFieldRelativeSpeeds(xSpeed, ySpeed, turnSpeed, self.gyro.getRotation2d())
 
         # If stopping the robot, preserve the old direction instead of going to
@@ -176,13 +183,18 @@ class Drivetrain:
         if xSpeed == 0 and ySpeed == 0:
             newSpeeds.direction = self.currentChassisSpeeds.direction
 
+        if angle is not None:
+            self.headingController.setGoal(angle)
+
+        turnSpeed = self.headingController.update(xSpeed, ySpeed, turnSpeed)
+
         # Limit the overall max speed.
         if newSpeeds.speed > constants.kMaxSpeed:
             newSpeeds.speed = constants.kMaxSpeed
 
         self.desiredChassisSpeeds = newSpeeds
 
-    def follow_choreo_trajectory(self, sample: choreo.SwerveSample):
+    def follow_choreo_trajectory(self, sample: choreo.trajectory.SwerveSample):
         pose = self.get_pose()
 
         # Not currently controlling robot heading

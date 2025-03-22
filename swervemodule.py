@@ -1,9 +1,11 @@
-import rev
 import math
-import constants
-from wpimath.kinematics import SwerveModuleState, SwerveModulePosition
+
+import rev
 import wpimath.geometry
 from wpimath.geometry import Rotation2d
+from wpimath.kinematics import SwerveModulePosition, SwerveModuleState
+
+import constants
 
 driveMotorConfig = rev.SparkMaxConfig()
 driveMotorConfig.smartCurrentLimit(40)
