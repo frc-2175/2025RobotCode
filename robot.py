@@ -153,7 +153,13 @@ class MyRobot(wpilib.TimedRobot):
         xSpeed = constants.kMaxSpeed * wpimath.applyDeadband(-self.leftStick.getY(), 0.1)
         ySpeed = constants.kMaxSpeed * wpimath.applyDeadband(-self.leftStick.getX(), 0.1)
         turnSpeed = wpimath.applyDeadband(-self.rightStick.getX(), 0.1)
+
+        if self.leftStick.getRawButton(1) or self.rightStick.getRawButton(1):
+            xSpeed *= 0.5
+            ySpeed *= 0.5
+            turnSpeed *= 0.5
         self.drivetrain.drive(xSpeed, ySpeed, turnSpeed * constants.kMaxTurnSpeed)
+
         if self.leftStick.getRawButtonPressed(8):
             self.drivetrain.reset_heading()
 

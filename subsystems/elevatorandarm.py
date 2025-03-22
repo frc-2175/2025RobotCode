@@ -88,9 +88,12 @@ class ElevatorAndArm:
         self.armOuterWheelMotor = rev.SparkMax(42, rev.SparkLowLevel.MotorType.kBrushless)
         self.armInnerWheelMotor = rev.SparkMax(43, rev.SparkLowLevel.MotorType.kBrushless)
         self.intakeSensor = wpilib.AnalogInput(3)
+        self.intakeSensor.setAverageBits(2)
 
         self.wristEncoder = self.wristMotor.getAbsoluteEncoder()
         self.wristController = self.wristMotor.getClosedLoopController()
+        self.armOuterWheelEncoder = self.armOuterWheelMotor.getEncoder()
+        self.armInnerWheelEncoder = self.armInnerWheelMotor.getEncoder()
 
         wristMotorConfig = rev.SparkMaxConfig()
         (
@@ -142,6 +145,8 @@ class ElevatorAndArm:
         self.wristFFTopic = ntutil.getFloatTopic("/Wrist/FF")
         self.intakeSensorTopic = ntutil.getFloatTopic("/Intake/Sensor")
         self.coralDetectedTopic = ntutil.getBooleanTopic("/Intake/Detected")
+        self.armInnerWheelSpeedTopic = ntutil.getFloatTopic("/Intake/InnerWheelVelocity")
+        self.armOuterWheelSpeedTopic = ntutil.getFloatTopic("/Intake/OuterWheelVelocity")
 
         # Mechanism2d telemetry
         self.mechActual = self.Mechanism("ElevatorMechanism/Actual", wpilib.Color.kRed)
@@ -154,6 +159,7 @@ class ElevatorAndArm:
         self.elevatorSetpoint = 0
         self.elevatorSetpointLimiter = SlewRateLimiter(1) #m/s
         self.wristPositionSetpoint = 0.0
+        self.previousCoralDetected = False
         self.intakeState: Literal["initial"] | Literal["stopped"] = "initial"
         self.intakeSpeed = 0
         self.intakeMode: Literal["coral"] | Literal["algae"] = "coral"
@@ -193,7 +199,7 @@ class ElevatorAndArm:
                 self.armOuterWheelMotor.set(0)
                 self.armInnerWheelMotor.set(0)
 
-            if self.coral_detected():
+            if self.previousCoralDetected and not self.coral_detected():
                 self.intakeState = "stopped"
         elif self.intakeState == "stopped":
             self.armOuterWheelMotor.set(0)
@@ -201,9 +207,12 @@ class ElevatorAndArm:
             
             if self.intakeSpeed == 0:
                 self.intakeState = "initial"
-        
-        self.intakeSensorTopic = self.intakeSensor.getVoltage()
-        self.coralDetectedTopic = self.coral_detected()
+        self.previousCoralDetected = self.coral_detected()
+
+        self.intakeSensorTopic.set(self.intakeSensor.getAverageVoltage())
+        self.coralDetectedTopic.set(self.coral_detected())
+        self.armInnerWheelSpeedTopic.set(self.armInnerWheelEncoder.getVelocity())
+        self.armOuterWheelSpeedTopic.set(self.armOuterWheelEncoder.getVelocity())
 
         # Update Mechanism2d telemetry
         self.mechActual.update(elevatorHeight=self.get_elevator_position(), armAngle=self.get_wrist_position())
@@ -320,7 +329,7 @@ class ElevatorAndArm:
         return armHeight - constants.kArmHeightInCarriage - constants.kElevatorBaseHeight - radius * math.cos(angle)
     
     def coral_detected(self):
-        if 1.5 < self.intakeSensor.getVoltage() < 2.5:
+        if 1.5 < self.intakeSensor.getAverageVoltage() < 2.5:
             return True
         else:
             return False
