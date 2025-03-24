@@ -2,6 +2,7 @@ import math
 
 import choreo.trajectory
 import navx
+import wpilib
 from photonlibpy import PhotonCamera, PhotonPoseEstimator, PoseStrategy
 from robotpy_apriltag import AprilTagField, AprilTagFieldLayout
 from wpilib import DriverStation
@@ -15,7 +16,7 @@ import constants
 import ntutil
 import utils
 from chassisspeeds import ChassisSpeeds2175
-from swerveheading import SwerveHeadingController
+from swerveheading import SwerveHeadingController, SwerveHeadingMode
 from swervemodule import SwerveModule
 from utils import RotationSlewRateLimiter
 
@@ -79,13 +80,13 @@ class Drivetrain:
         self.robotPoseTopic = ntutil.getStructTopic("/RobotPose", Pose2d)
         self.visionPoseTopic = ntutil.getStructTopic("/VisionPose", Pose3d)
 
+        self.badChoreoModeAlert = wpilib.Alert("Choreo requires SwerveHeadingMode.FORCE_HEADING", wpilib.Alert.AlertType.kError)
+
         # Control variables
         self.speedLimiter = SlewRateLimiter(constants.kSpeedSlewRate) #m/s
         self.rotationLimiter = SlewRateLimiter(constants.kRotationSlewRate) #rad/s
         self.directionLimiter = RotationSlewRateLimiter(constants.kDirectionSlewRate) #rad/s
-
-        # Heading controller
-        self.headingController = SwerveHeadingController(self.gyro)
+        self.headingController = SwerveHeadingController(self.gyro, SwerveHeadingMode.HUMAN_DRIVERS)
         
 
     def periodic(self):
@@ -99,6 +100,9 @@ class Drivetrain:
         newSpeed = None
         newTurnSpeed = self.rotationLimiter.calculate(self.desiredChassisSpeeds.omega)
 
+        # Calculate a new direction/speed for the bot based on the current and desired
+        # directions/speeds. This smooths out jittery controls and ensures that we
+        # accelerate and decelerate as gracefully as possible.
         if currentSpeed == 0:
             newDirectionSlewRate = 500 # arbitarily huge number; effectively instantaneous
         else:
@@ -128,10 +132,16 @@ class Drivetrain:
             # Angle is very wrong. Decelerate and steer wheels to correct direction.
             newDirection = self.directionLimiter.calculate(desiredDirection)
             newSpeed = self.speedLimiter.calculate(0)
+
+        # Potentially override the turn speed via the heading controller.
+        newTurnSpeed = self.headingController.update(newSpeed, newTurnSpeed)
+
+        # Update our current chassis speeds to the new values.
         self.currentChassisSpeeds = ChassisSpeeds2175(newDirection, newSpeed, newTurnSpeed)
         self.desiredChassisSpeedsTopic.set(self.desiredChassisSpeeds.toWPILibChassisSpeeds())
         self.currentChassisSpeedsTopic.set(self.currentChassisSpeeds.toWPILibChassisSpeeds())
 
+        # Do kinematics and update each swerve module's setpoints.
         frontLeft, frontRight, backLeft, backRight = self.kinematics.toSwerveModuleStates(self.currentChassisSpeeds.toWPILibChassisSpeeds())
         self.desiredSwerveStatesTopic.set([frontLeft, frontRight, backLeft, backRight])
 
@@ -174,7 +184,7 @@ class Drivetrain:
     def get_heading(self) -> Rotation2d:
         return self.odometry.getPose().rotation()
 
-    def drive(self, xSpeed: float, ySpeed: float, turnSpeed: float, angle: Rotation2d | None = None):
+    def drive(self, xSpeed: float, ySpeed: float, turnSpeed: float):
         """
         Drives the robot in the given direction IN FIELD COORDINATES. Note that because we use the
         "always blue origin" convention, as described in the WPILib docs, this means that
@@ -191,11 +201,6 @@ class Drivetrain:
         if xSpeed == 0 and ySpeed == 0:
             newSpeeds.direction = self.currentChassisSpeeds.direction
 
-        if angle is not None:
-            self.headingController.setGoal(angle)
-
-        turnSpeed = self.headingController.update(xSpeed, ySpeed, turnSpeed)
-
         # Limit the overall max speed.
         if newSpeeds.speed > constants.kMaxSpeed:
             newSpeeds.speed = constants.kMaxSpeed
@@ -205,12 +210,17 @@ class Drivetrain:
     def follow_choreo_trajectory(self, sample: choreo.trajectory.SwerveSample):
         pose = self.get_pose()
 
-        # Not currently controlling robot heading
         self.drive(
             sample.vx + self.x_controller.calculate(pose.X(), sample.x),
             sample.vy + self.y_controller.calculate(pose.Y(), sample.y),
-            sample.omega, # TODO: Add heading controller - see Getting Started docs for Choreo
+            0, # Turn speed will be controlled by the heading controller below.
         )
+
+        self.badChoreoModeAlert.set(self.headingController.mode != SwerveHeadingMode.FORCE_HEADING)
+        self.headingController.setGoal(Rotation2d(sample.heading))
+    
+    def set_heading_controller_mode(self, mode: SwerveHeadingMode):
+        self.headingController.setMode(mode)
 
     def reset_heading(self, angle: float):
         self.odometry.resetRotation(Rotation2d(angle))
