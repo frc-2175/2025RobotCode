@@ -78,4 +78,8 @@ class Hanger:
         """
         self.setpoint = setpoint
 
-    
+    def trigger_solenoid(self):
+        self.intakeSolenoid.set(1)
+
+    def release_solenoid(self):
+        self.intakeSolenoid.set(0)

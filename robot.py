@@ -209,6 +209,13 @@ class MyRobot(wpilib.TimedRobot):
         else:
             ntutil.logAlert(self.scoringModeImproperValue, self.scoringMode)
 
+        if self.gamePad.getStartButton():
+            self.hanger.trigger_solenoid()
+            print("Triggering solenoid")
+        else:
+            self.hanger.release_solenoid()
+
+
     # ================= SETUP METHODS =================
 
     def loadChoreoTrajectories(self):

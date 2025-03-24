@@ -127,15 +127,34 @@ class ElevatorAndArm:
                 .inverted(True)
                 .setIdleMode(rev.SparkBaseConfig.IdleMode.kBrake)
                 .smartCurrentLimit(40)
+                .encoder
+                    .positionConversionFactor((constants.kArmWheelDiameter * math.pi) / constants.kArmWheelReduction)
         )
         (
             armInnerWheelMotorConfig
                 .inverted(False)
                 .setIdleMode(rev.SparkBaseConfig.IdleMode.kBrake)
                 .smartCurrentLimit(40)
+                .encoder
+                    .positionConversionFactor((constants.kArmWheelDiameter * math.pi) / constants.kArmWheelReduction)
+        )
+        (
+            armOuterWheelMotorConfig
+                .closedLoop
+                    .pid(0.2, 0, 0)
+                    .setFeedbackSensor(rev.ClosedLoopConfig.FeedbackSensor.kAbsoluteEncoder)
+        )
+        (
+            armInnerWheelMotorConfig
+                .closedLoop
+                    .pid(0.2, 0, 0)
+                    .setFeedbackSensor(rev.ClosedLoopConfig.FeedbackSensor.kAbsoluteEncoder)
         )
         self.armOuterWheelMotor.configure(armOuterWheelMotorConfig, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
         self.armInnerWheelMotor.configure(armInnerWheelMotorConfig, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
+
+        self.armOuterWheelController = self.armOuterWheelMotor.getClosedLoopController()
+        self.armInnerWheelController = self.armInnerWheelMotor.getClosedLoopController()
 
         # Arm telemetry
         self.wristAngleTopic = ntutil.getFloatTopic("/Wrist/Angle")
@@ -147,6 +166,7 @@ class ElevatorAndArm:
         self.coralDetectedTopic = ntutil.getBooleanTopic("/Intake/Detected")
         self.armInnerWheelSpeedTopic = ntutil.getFloatTopic("/Intake/InnerWheelVelocity")
         self.armOuterWheelSpeedTopic = ntutil.getFloatTopic("/Intake/OuterWheelVelocity")
+        self.coralPositionTopic = ntutil.getFloatTopic("/Intake/CoralPosition")
 
         # Mechanism2d telemetry
         self.mechActual = self.Mechanism("ElevatorMechanism/Actual", wpilib.Color.kRed)
@@ -163,6 +183,7 @@ class ElevatorAndArm:
         self.intakeState: Literal["initial"] | Literal["stopped"] = "initial"
         self.intakeSpeed = 0
         self.intakeMode: Literal["coral"] | Literal["algae"] = "coral"
+
 
     def periodic(self):
         # Elevator
@@ -186,24 +207,31 @@ class ElevatorAndArm:
         self.wristSafePositionTopic.set(safeWristPosition)
         self.wristFFTopic.set(armFF)
 
+        self.coralPreviouslyDetected = False
+
         # Intake wheels
         if self.intakeState == "initial":
             if self.intakeMode == "coral":
-                self.armOuterWheelMotor.set(self.intakeSpeed * constants.kSquishyWheelCoralSpeed)
-                self.armInnerWheelMotor.set(-self.intakeSpeed * constants.kSquishyWheelCoralSpeed)
+                # self.armInnerWheelController
+                self.armInnerWheelController.setReference(self.intakeSpeed * constants.kSquishyWheelCoralSpeed, rev.SparkMax.ControlType.kDutyCycle)
+                self.armOuterWheelController.setReference(-self.intakeSpeed * constants.kSquishyWheelCoralSpeed, rev.SparkMax.ControlType.kDutyCycle)
+                # self.armOuterWheelMotor.set(self.intakeSpeed * constants.kSquishyWheelCoralSpeed)
+                # self.armInnerWheelMotor.set(-self.intakeSpeed * constants.kSquishyWheelCoralSpeed)
             elif self.intakeMode == "algae":
-                self.armOuterWheelMotor.set(self.intakeSpeed * constants.kSquishyWheelAlgaeSpeed)
-                self.armInnerWheelMotor.set(self.intakeSpeed * constants.kSquishyWheelAlgaeSpeed)
+                self.armInnerWheelController.setReference(self.intakeSpeed * constants.kSquishyWheelCoralSpeed, rev.SparkMax.ControlType.kDutyCycle)
+                self.armOuterWheelController.setReference(self.intakeSpeed * constants.kSquishyWheelCoralSpeed, rev.SparkMax.ControlType.kDutyCycle)
+                # self.armOuterWheelMotor.set(self.intakeSpeed * constants.kSquishyWheelAlgaeSpeed)
+                # self.armInnerWheelMotor.set(self.intakeSpeed * constants.kSquishyWheelAlgaeSpeed)
             else:
                 ntutil.log(f"ERROR! Bad intake mode: {self.intakeMode}")
-                self.armOuterWheelMotor.set(0)
-                self.armInnerWheelMotor.set(0)
+                self.armInnerWheelController.setReference(0, rev.SparkMax.ControlType.kDutyCycle)
+                self.armInnerWheelController.setReference(0, rev.SparkMax.ControlType.kDutyCycle)
 
             if self.previousCoralDetected and not self.coral_detected():
                 self.intakeState = "stopped"
         elif self.intakeState == "stopped":
-            self.armOuterWheelMotor.set(0)
-            self.armInnerWheelMotor.set(0)
+            self.armInnerWheelController.setReference(0, rev.SparkMax.ControlType.kDutyCycle)
+            self.armInnerWheelController.setReference(0, rev.SparkMax.ControlType.kDutyCycle)
             
             if self.intakeSpeed == 0:
                 self.intakeState = "initial"
@@ -217,6 +245,8 @@ class ElevatorAndArm:
         # Update Mechanism2d telemetry
         self.mechActual.update(elevatorHeight=self.get_elevator_position(), armAngle=self.get_wrist_position())
         self.mechDesired.update(elevatorHeight=slewedElevatorSetpoint, armAngle=safeWristPosition)
+
+        self.coralPositionTopic.set(self.get_coral_position())
 
     def set_arm_position(self, height: float, angle: float, mode: int):
         """
@@ -267,6 +297,7 @@ class ElevatorAndArm:
         -1 to 1, where positive means intake -> reef. Speed will be limited by the top
         speed in constants.py.
         """
+
         self.intakeSpeed = speed
         self.intakeMode = "coral"
         pass
@@ -330,9 +361,23 @@ class ElevatorAndArm:
     
     def coral_detected(self):
         if 1.5 < self.intakeSensor.getAverageVoltage() < 2.5:
+            if self.coralPreviouslyDetected:
+                self.armOuterWheelEncoder.setPosition(0)
+                self.armInnerWheelEncoder.setPosition(0)
+            
+            self.coralPreviouslyDetected = True
             return True
         else:
+            self.coralPreviouslyDetected = False
             return False
+        
+    def get_coral_position(self):
+        #return self.armOuterWheelEncoder.getPosition()
+        return ((abs(self.armOuterWheelEncoder.getPosition()) + abs(self.armInnerWheelEncoder.getPosition())) / 2) + constants.kCoralPositionOffset
+
+    def set_coral_position(self, setpoint):
+        self.armOuterWheelController.setReference(setpoint, rev.SparkMax.ControlType.kPosition)
+        self.armInnerWheelController.setReference(setpoint, rev.SparkMax.ControlType.kPosition)
 
     class Mechanism:
         """

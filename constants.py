@@ -25,7 +25,7 @@ kRotationSlewRate = 2.0 * kMaxTurnSpeed # m/s
 # Elevator
 kMaxElevatorSpeed = wpimath.units.inchesToMeters(9) # m/s
 kMinElevatorHeight = wpimath.units.inchesToMeters(0.1) # m
-kMaxElevatorHeight = wpimath.units.inchesToMeters((4 * 12) + 2) # m
+kMaxElevatorHeight = wpimath.units.inchesToMeters((4 * 12) + 3) # m
 # Pitch diameter for the WCP 18 tooth sprocket is 1.432 inches
 kElevatorSprocketDiameter = wpimath.units.inchesToMeters(1.432)
 kElevatorMotorReduction = (1 / 20)
@@ -85,9 +85,14 @@ kArmAlgaeRadius = wpimath.units.inchesToMeters(21.5)
 #Arm Angle Presets
 kWristUprightAngle = wpimath.units.degreesToRadians(-5) #rad
 kWristCoralScoreAngle = wpimath.units.degreesToRadians(-30) #rad
-kWristHighCoralScoreAngle = wpimath.units.degreesToRadians(-45)
+kWristHighCoralScoreAngle = wpimath.units.degreesToRadians(-55)
 kWristAlgaeDereef = wpimath.units.degreesToRadians(-110) #rad
 kWristAlgaeGround = wpimath.units.degreesToRadians(-130) #rad
+
+# Arm wheel constants
+kArmWheelReduction = 5.0
+kArmWheelDiameter = wpimath.units.inchesToMeters(4)
+kCoralPositionOffset = wpimath.units.inchesToMeters(3.75)
 
 # Arm FF constants
 # https://www.reca.lc/arm?armMass=%7B%22s%22%3A5%2C%22u%22%3A%22lbs%22%7D&comLength=%7B%22s%22%3A5.97%2C%22u%22%3A%22in%22%7D&currentLimit=%7B%22s%22%3A38%2C%22u%22%3A%22A%22%7D&efficiency=80&endAngle=%7B%22s%22%3A90%2C%22u%22%3A%22deg%22%7D&iterationLimit=10000&motor=%7B%22quantity%22%3A1%2C%22name%22%3A%22NEO%22%7D&ratio=%7B%22magnitude%22%3A25%2C%22ratioType%22%3A%22Reduction%22%7D&startAngle=%7B%22s%22%3A-90%2C%22u%22%3A%22deg%22%7D
