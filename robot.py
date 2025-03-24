@@ -102,6 +102,10 @@ class MyRobot(wpilib.TimedRobot):
             self.scoringModeTopic.set("???")
 
 
+    def disabledInit(self):
+        self.drivetrain.drive(0, 0, 0)
+
+
     def testPeriodic(self):
         # self.elevatorandarm.set_elevator_pid(utils.remap(self.leftStick.getRawAxis(2), (-1, 1), (3, 0)), 0, 0)
         # self.elevatorandarm.set_elevator_position(utils.remap(self.rightStick.getRawAxis(2), (-1, 1), (1, 0)))
