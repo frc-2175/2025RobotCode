@@ -1,8 +1,8 @@
 {
   "hubs": [
     {
-      "x": -8,
-      "y": -8,
+      "x": 629,
+      "y": 367,
       "width": 1616,
       "height": 868,
       "state": {
@@ -18,20 +18,18 @@
             "/Elevator/Setpoint",
             "/SmartDashboard/ElevatorMechanism",
             "/Controls",
-            "/RobotPose",
             "/Auto",
-            "/SmartDashboard",
             "/ChassisSpeeds",
             "/ChassisSpeeds/Current",
             "/SmartDashboard/Auto Trajectory",
-            "/Hanger",
             "/Hanger/Setpoint",
-            "/Intake",
-            "/Wrist"
+            "/SwerveHeading",
+            "/SwerveHeading/Goal",
+            "/SwerveStates"
           ]
         },
         "tabs": {
-          "selected": 4,
+          "selected": 2,
           "tabs": [
             {
               "type": 0,
@@ -93,11 +91,11 @@
                   },
                   {
                     "type": "chassisSpeeds",
-                    "logKey": "NT:/Auto/ChassisSpeeds",
+                    "logKey": "NT:/SwerveHeading/GoalAsChassisSpeeds",
                     "logType": "ChassisSpeeds",
                     "visible": true,
                     "options": {
-                      "color": "#00ff00"
+                      "color": "#ff8c00"
                     }
                   }
                 ],
@@ -123,6 +121,26 @@
                     "options": {}
                   },
                   {
+                    "type": "swerveStates",
+                    "logKey": "NT:/SwerveStates/Desired",
+                    "logType": "SwerveModuleState[]",
+                    "visible": true,
+                    "options": {
+                      "color": "#0000ff",
+                      "arrangement": "0,1,2,3"
+                    }
+                  },
+                  {
+                    "type": "swerveStates",
+                    "logKey": "NT:/SwerveStates/Actual",
+                    "logType": "SwerveModuleState[]",
+                    "visible": true,
+                    "options": {
+                      "color": "#ff0000",
+                      "arrangement": "0,1,2,3"
+                    }
+                  },
+                  {
                     "type": "ghost",
                     "logKey": "NT:/Auto/Pose",
                     "logType": "Pose2d",
@@ -130,13 +148,23 @@
                     "options": {
                       "color": "#00ff00"
                     }
+                  },
+                  {
+                    "type": "trajectory",
+                    "logKey": "NT:/Auto/Trajectory",
+                    "logType": "Pose2d[]",
+                    "visible": true,
+                    "options": {
+                      "color": "#00ff00",
+                      "size": "normal"
+                    }
                   }
                 ],
                 "game": "2025 Field (Welded)",
                 "bumpers": "auto",
                 "origin": "blue",
                 "orientation": 0,
-                "size": 24
+                "size": 27
               },
               "controllerUUID": "t0tjn6f2wglayr4yrrbbaksj14zadnwy",
               "renderer": null,
@@ -171,6 +199,26 @@
                     "options": {}
                   },
                   {
+                    "type": "swerveStates",
+                    "logKey": "NT:/SwerveStates/Desired",
+                    "logType": "SwerveModuleState[]",
+                    "visible": true,
+                    "options": {
+                      "color": "#0000ff",
+                      "arrangement": "0,1,2,3"
+                    }
+                  },
+                  {
+                    "type": "swerveStates",
+                    "logKey": "NT:/SwerveStates/Actual",
+                    "logType": "SwerveModuleState[]",
+                    "visible": true,
+                    "options": {
+                      "color": "#ff0000",
+                      "arrangement": "0,1,2,3"
+                    }
+                  },
+                  {
                     "type": "ghost",
                     "logKey": "NT:/Auto/Pose",
                     "logType": "Pose2d",
@@ -178,6 +226,16 @@
                     "options": {
                       "model": "KitBot",
                       "color": "#00ff00"
+                    }
+                  },
+                  {
+                    "type": "trajectory",
+                    "logKey": "NT:/Auto/Trajectory",
+                    "logType": "Pose2d[]",
+                    "visible": true,
+                    "options": {
+                      "color": "#00ff00",
+                      "size": "normal"
                     }
                   }
                 ],
@@ -189,16 +247,105 @@
                 "cameraIndex": -1,
                 "orbitFov": 50,
                 "cameraPosition": [
-                  3.737201659599786,
-                  9.574841721728971,
-                  -1.5577520718774336
+                  -4.139012610246112,
+                  8.17372295985498,
+                  -4.525894350246876
                 ],
                 "cameraTarget": [
-                  3.6603583331546097,
-                  -1.885005252170395,
-                  2.4149373805358043
+                  -3.9085192331442378,
+                  -2.9417507713514124,
+                  0.3227524281128157
                 ]
               },
+              "controlsHeight": 200
+            },
+            {
+              "type": 1,
+              "title": "Swerve Graph",
+              "controller": {
+                "leftSources": [
+                  {
+                    "type": "stepped",
+                    "logKey": "NT:/SwerveHeading/Goal/value",
+                    "logType": "Number",
+                    "visible": true,
+                    "options": {
+                      "color": "#e5b31b",
+                      "size": "normal"
+                    }
+                  },
+                  {
+                    "type": "stepped",
+                    "logKey": "NT:/Gyro/value",
+                    "logType": "Number",
+                    "visible": true,
+                    "options": {
+                      "color": "#c0b487",
+                      "size": "normal"
+                    }
+                  }
+                ],
+                "rightSources": [
+                  {
+                    "type": "stepped",
+                    "logKey": "NT:/SwerveHeading/Output",
+                    "logType": "Number",
+                    "visible": true,
+                    "options": {
+                      "color": "#e48b32",
+                      "size": "normal"
+                    }
+                  },
+                  {
+                    "type": "stepped",
+                    "logKey": "NT:/SwerveHeading/GyroRate",
+                    "logType": "Number",
+                    "visible": true,
+                    "options": {
+                      "color": "#af2437",
+                      "size": "normal"
+                    }
+                  }
+                ],
+                "discreteSources": [
+                  {
+                    "type": "stripes",
+                    "logKey": "NT:/SwerveHeading/State",
+                    "logType": "String",
+                    "visible": true,
+                    "options": {
+                      "color": "#2b66a2"
+                    }
+                  },
+                  {
+                    "type": "stripes",
+                    "logKey": "NT:/SwerveHeading/IsMaintaining",
+                    "logType": "Boolean",
+                    "visible": true,
+                    "options": {
+                      "color": "#80588e"
+                    }
+                  }
+                ],
+                "leftLockedRange": null,
+                "rightLockedRange": null,
+                "leftUnitConversion": {
+                  "type": "angle",
+                  "factor": 1,
+                  "from": "radians",
+                  "to": "degrees"
+                },
+                "rightUnitConversion": {
+                  "type": "angular velocity",
+                  "factor": 1,
+                  "from": "radians/second",
+                  "to": "degrees/second"
+                },
+                "leftFilter": 0,
+                "rightFilter": 0
+              },
+              "controllerUUID": "10pkpnelc2mib6yocl59jctrxz88wjtv",
+              "renderer": null,
               "controlsHeight": 200
             },
             {
@@ -415,5 +562,5 @@
     }
   ],
   "satellites": [],
-  "version": "4.1.1"
+  "version": "4.1.2"
 }

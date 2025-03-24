@@ -73,6 +73,7 @@ class MyRobot(wpilib.TimedRobot):
 
         # Auto telemetry
         self.autoTimerTopic = ntutil.getFloatTopic("/Auto/Timer")
+        self.autoTrajectoryTopic = ntutil.getStructArrayTopic("/Auto/Trajectory", Pose2d)
         self.autoChassisSpeedsTopic = ntutil.getStructTopic("/Auto/ChassisSpeeds", ChassisSpeeds)
         self.autoPoseTopic = ntutil.getStructTopic("/Auto/Pose", Pose2d)
 
@@ -104,6 +105,7 @@ class MyRobot(wpilib.TimedRobot):
 
     def disabledInit(self):
         self.drivetrain.drive(0, 0, 0)
+        self.autoTrajectoryTopic.set([])
 
 
     def testPeriodic(self):
@@ -118,11 +120,16 @@ class MyRobot(wpilib.TimedRobot):
     def autonomousInit(self) -> None:
         self.trajectory = self.trajectoryChooser.getSelected()
         if self.trajectory:
-            initial_pose = self.trajectory.get_initial_pose(wpilib.DriverStation.getAlliance() == wpilib.DriverStation.Alliance.kRed)
+            initial_pose = self.trajectory.get_initial_pose(self.isRedAlliance())
             if initial_pose:
                 self.drivetrain.reset_pose(initial_pose)
             self.autoTimer.restart()
             self.previousAutoTime = 0
+
+            if self.isRedAlliance():
+                self.autoTrajectoryTopic.set([s.flipped().get_pose() for s in self.trajectory.samples])
+            else:
+                self.autoTrajectoryTopic.set([s.get_pose() for s in self.trajectory.samples])
 
 
     def autonomousPeriodic(self) -> None:
@@ -131,7 +138,7 @@ class MyRobot(wpilib.TimedRobot):
 
         self.noAutoAlert.set(not self.trajectory)
         if self.trajectory:
-            sample = self.trajectory.sample_at(self.autoTimer.get(), (wpilib.DriverStation.getAlliance() == wpilib.DriverStation.Alliance.kRed))
+            sample = self.trajectory.sample_at(self.autoTimer.get(), self.isRedAlliance())
             self.noAutoSampleAlert.set(not sample)
             if sample:
                 self.drivetrain.follow_choreo_trajectory(sample)
@@ -242,3 +249,8 @@ class MyRobot(wpilib.TimedRobot):
                     ntutil.logAlert(self.badTrajectoryAlert, autoName)
             except ValueError as err:
                 ntutil.logAlert(self.badTrajectoryAlert, err)
+
+    # ================= UTILITY METHODS =================
+
+    def isRedAlliance(self):
+        return wpilib.DriverStation.getAlliance() == wpilib.DriverStation.Alliance.kRed
