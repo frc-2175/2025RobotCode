@@ -181,7 +181,7 @@ class MyRobot(wpilib.TimedRobot):
 
         if self.gamePad.getLeftBumper():
             self.scoringMode = constants.kAlgaeMode
-        
+
         if self.scoringMode == constants.kCoralMode:
             if self.gamePad.getAButton():
                 #Set Elevator to L1/Handoff Height
@@ -197,7 +197,7 @@ class MyRobot(wpilib.TimedRobot):
                 self.elevatorandarm.go_to_coral_preset(level=4)
 
             coralSpeed = wpimath.applyDeadband(gamePieceSpeed, 0.2)
-            self.elevatorandarm.move_coral(coralSpeed)
+            self.elevatorandarm.move_coral_manually(coralSpeed)
 
         elif self.scoringMode == constants.kAlgaeMode:
             if self.gamePad.getAButton():
@@ -219,6 +219,13 @@ class MyRobot(wpilib.TimedRobot):
 
         else:
             ntutil.logAlert(self.scoringModeImproperValue, self.scoringMode)
+
+        if self.gamePad.getStartButton():
+            self.hanger.trigger_solenoid()
+            print("Triggering solenoid")
+        else:
+            self.hanger.release_solenoid()
+
 
     # ================= SETUP METHODS =================
 
