@@ -141,14 +141,16 @@ class ElevatorAndArm:
         (
             armOuterWheelMotorConfig
                 .closedLoop
-                    .pid(0.2, 0, 0)
-                    .setFeedbackSensor(rev.ClosedLoopConfig.FeedbackSensor.kAbsoluteEncoder)
+                    .pid(1 / wpimath.units.inchesToMeters(5), 0, 0)
+                    .outputRange(-0.1, 0.1)
+                    .setFeedbackSensor(rev.ClosedLoopConfig.FeedbackSensor.kPrimaryEncoder)
         )
         (
             armInnerWheelMotorConfig
                 .closedLoop
-                    .pid(0.2, 0, 0)
-                    .setFeedbackSensor(rev.ClosedLoopConfig.FeedbackSensor.kAbsoluteEncoder)
+                    .pid(1 / wpimath.units.inchesToMeters(5), 0, 0)
+                    .outputRange(-0.1, 0.1)
+                    .setFeedbackSensor(rev.ClosedLoopConfig.FeedbackSensor.kPrimaryEncoder)
         )
         self.armOuterWheelMotor.configure(armOuterWheelMotorConfig, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
         self.armInnerWheelMotor.configure(armInnerWheelMotorConfig, rev.SparkMax.ResetMode.kResetSafeParameters, rev.SparkMax.PersistMode.kPersistParameters)
@@ -169,6 +171,9 @@ class ElevatorAndArm:
         self.armInnerWheelSpeedTopic = ntutil.getFloatTopic("/Intake/InnerWheelVelocity")
         self.armOuterWheelSpeedTopic = ntutil.getFloatTopic("/Intake/OuterWheelVelocity")
         self.coralPositionTopic = ntutil.getFloatTopic("/Intake/CoralPosition")
+        self.coralSetpointTopic = ntutil.getFloatTopic("/Intake/CoralSetpoint")
+        self.intakeModeTopic = ntutil.getStringTopic("/Intake/IntakeMode")
+        self.intakeStateTopic = ntutil.getStringTopic("/Intake/IntakeState")
 
         self.presetWhileDutyCycleAlert = wpilib.Alert("Set coral position while holding triggers; ignored", wpilib.Alert.AlertType.kWarning)
         self.setCoralPositionWhileInAlgaeModeAlert = wpilib.Alert("Set coral position while in algae mode - this is a controls bug", wpilib.Alert.AlertType.kError)
@@ -187,6 +192,7 @@ class ElevatorAndArm:
         self.previousCoralDetected = False
         self.intakeState: Literal["positional"] | Literal["duty cycle"] = "positional"
         self.intakeSpeed = 0 # commanded from outside, will use duty cycle
+        self.previousIntakeSpeed = 0
         self.intakeMode: Literal["coral"] | Literal["algae"] = "coral"
 
 
@@ -212,13 +218,11 @@ class ElevatorAndArm:
         self.wristSafePositionTopic.set(safeWristPosition)
         self.wristFFTopic.set(armFF)
 
-        # TODO: Handle any logic that should happen when changing between coral/algae modes
-
         # Intake wheels
         # !! IMPORTANT !! See intakeState.jpg!
         if self.intakeMode == "coral":
             if self.intakeState == "positional":
-                if self.intakeSpeed != 0:
+                if self.previousIntakeSpeed == 0 and self.intakeSpeed != 0:
                     self.intakeState = "duty cycle"
             elif self.intakeState == "duty cycle":
                 stoppedDetectingCoral = self.previousCoralDetected and not self.coral_detected()
@@ -226,22 +230,22 @@ class ElevatorAndArm:
                     # Go back to positional and hold current position (to stop the wheels).
                     self.intakeState = "positional"
                     self.armInnerWheelController.setReference(self.armInnerWheelEncoder.getPosition(), rev.SparkMax.ControlType.kPosition)
-                    self.armOuterWheelController.setReference(self.armInnerWheelEncoder.getPosition(), rev.SparkMax.ControlType.kPosition)
+                    self.armOuterWheelController.setReference(self.armOuterWheelEncoder.getPosition(), rev.SparkMax.ControlType.kPosition)
                 if stoppedDetectingCoral:
                     # Stopped detecting coral. Reset encoders and go back to positional.
                     # It will hold the coral in position until a preset is selected.
                     self.intakeState = "positional"
-                    self.armInnerWheelEncoder.setPosition(constants.kCoralPositionWhenStoppedDetecting)
+                    self.armInnerWheelEncoder.setPosition(-constants.kCoralPositionWhenStoppedDetecting)
                     self.armOuterWheelEncoder.setPosition(constants.kCoralPositionWhenStoppedDetecting)
-                    self.armInnerWheelController.setReference(constants.kCoralPositionWhenStoppedDetecting, rev.SparkMax.ControlType.kPosition)
-                    self.armOuterWheelController.setReference(constants.kCoralPositionWhenStoppedDetecting, rev.SparkMax.ControlType.kPosition)
+                    self.set_coral_position(constants.kCoralPositionWhenStoppedDetecting)
                 else:
-                    self.armInnerWheelController.setReference(self.intakeSpeed * constants.kSquishyWheelCoralSpeed, rev.SparkMax.ControlType.kDutyCycle)
-                    self.armOuterWheelController.setReference(-self.intakeSpeed * constants.kSquishyWheelCoralSpeed, rev.SparkMax.ControlType.kDutyCycle)
+                    self.armInnerWheelController.setReference(-self.intakeSpeed * constants.kSquishyWheelCoralSpeed, rev.SparkMax.ControlType.kDutyCycle)
+                    self.armOuterWheelController.setReference(self.intakeSpeed * constants.kSquishyWheelCoralSpeed, rev.SparkMax.ControlType.kDutyCycle)
         elif self.intakeMode == "algae":
-            self.armInnerWheelController.setReference(self.intakeSpeed * constants.kSquishyWheelAlgaeSpeed, rev.SparkMax.ControlType.kDutyCycle)
-            self.armOuterWheelController.setReference(self.intakeSpeed * constants.kSquishyWheelAlgaeSpeed, rev.SparkMax.ControlType.kDutyCycle)
+            self.armInnerWheelController.setReference(-self.intakeSpeed * constants.kSquishyWheelAlgaeSpeed, rev.SparkMax.ControlType.kDutyCycle)
+            self.armOuterWheelController.setReference(-self.intakeSpeed * constants.kSquishyWheelAlgaeSpeed, rev.SparkMax.ControlType.kDutyCycle)
 
+        self.previousIntakeSpeed = self.intakeSpeed
         self.previousCoralDetected = self.coral_detected()
 
         self.intakeSensorTopic.set(self.intakeSensor.getAverageVoltage())
@@ -250,6 +254,8 @@ class ElevatorAndArm:
         self.armOuterWheelPositionTopic.set(self.armOuterWheelEncoder.getPosition())
         self.armInnerWheelSpeedTopic.set(self.armInnerWheelEncoder.getVelocity())
         self.armOuterWheelSpeedTopic.set(self.armOuterWheelEncoder.getVelocity())
+        self.intakeModeTopic.set(self.intakeMode)
+        self.intakeStateTopic.set(self.intakeState)
 
         # Update Mechanism2d telemetry
         self.mechActual.update(elevatorHeight=self.get_elevator_position(), armAngle=self.get_wrist_position())
@@ -374,7 +380,7 @@ class ElevatorAndArm:
         return 1.5 < self.intakeSensor.getAverageVoltage() < 2.5
 
     def get_coral_position(self):
-        return (self.armOuterWheelEncoder.getPosition() + self.armInnerWheelEncoder.getPosition()) / 2
+        return (self.armOuterWheelEncoder.getPosition() + -self.armInnerWheelEncoder.getPosition()) / 2
 
     def set_coral_position(self, setpoint):
         if self.intakeMode != "coral":
@@ -383,8 +389,9 @@ class ElevatorAndArm:
             return
 
         if self.intakeState == "positional":
-            self.armInnerWheelController.setReference(setpoint, rev.SparkMax.ControlType.kPosition)
+            self.armInnerWheelController.setReference(-setpoint, rev.SparkMax.ControlType.kPosition)
             self.armOuterWheelController.setReference(setpoint, rev.SparkMax.ControlType.kPosition)
+            self.coralSetpointTopic.set(setpoint)
         elif self.intakeState == "duty cycle":
             # Ignore this input; there is nothing sensible we can do.
             self.presetWhileDutyCycleAlert.set(True)
