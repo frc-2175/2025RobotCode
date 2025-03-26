@@ -66,6 +66,7 @@ class MyRobot(wpilib.TimedRobot):
         self.noAutoSampleAlert = Alert("No sample for autonomous trajectory; stopping bot", Alert.AlertType.kWarning)
         self.scoringModeImproperValue = Alert("Variable scoringMode improper value (expected kCoralMode or kAlgaeMode)", Alert.AlertType.kError)
         self.algaeReverseImproperValue = Alert("Variable algaeReverse improper value (expected True or False)", Alert.AlertType.kError)
+        self.redAllianceWhenTestingAlert = Alert("Do not use red alliance in testing! Controls will be inverted.", Alert.AlertType.kWarning)
 
         # Control state
         self.scoringMode = constants.kCoralMode
@@ -98,6 +99,8 @@ class MyRobot(wpilib.TimedRobot):
         self.drivetrain.periodic()
         self.elevatorandarm.periodic()
         self.hanger.periodic()
+        if self.isSimulation():
+            self.simDrivetrain.simulationPeriodic(0.02)
 
         if self.scoringMode == constants.kCoralMode:
             self.scoringModeTopic.set("Coral")
@@ -106,8 +109,7 @@ class MyRobot(wpilib.TimedRobot):
         else:
             self.scoringModeTopic.set("???")
         
-        if self.isSimulation():
-            self.simDrivetrain.simulationPeriodic(0.02)
+        self.redAllianceWhenTestingAlert.set(utils.isRedAlliance() and wpilib.DriverStation.isDSAttached() and not wpilib.DriverStation.isFMSAttached())
 
 
     def disabledInit(self):
@@ -127,13 +129,13 @@ class MyRobot(wpilib.TimedRobot):
     def autonomousInit(self) -> None:
         self.trajectory = self.trajectoryChooser.getSelected()
         if self.trajectory:
-            initial_pose = self.trajectory.get_initial_pose(self.isRedAlliance())
+            initial_pose = self.trajectory.get_initial_pose(utils.isRedAlliance())
             if initial_pose:
                 self.drivetrain.reset_pose(initial_pose)
             self.autoTimer.restart()
             self.previousAutoTime = 0
 
-            if self.isRedAlliance():
+            if utils.isRedAlliance():
                 self.autoTrajectoryTopic.set([s.flipped().get_pose() for s in self.trajectory.samples])
             else:
                 self.autoTrajectoryTopic.set([s.get_pose() for s in self.trajectory.samples])
@@ -145,7 +147,7 @@ class MyRobot(wpilib.TimedRobot):
 
         self.noAutoAlert.set(not self.trajectory)
         if self.trajectory:
-            sample = self.trajectory.sample_at(self.autoTimer.get(), self.isRedAlliance())
+            sample = self.trajectory.sample_at(self.autoTimer.get(), utils.isRedAlliance())
             self.noAutoSampleAlert.set(not sample)
             if sample:
                 self.drivetrain.follow_choreo_trajectory(sample)
@@ -168,18 +170,27 @@ class MyRobot(wpilib.TimedRobot):
 
 
     def teleopPeriodic(self) -> None:
+        # Get speeds from joysticks (assuming blue alliance for now)
         xSpeed = constants.kMaxSpeed * wpimath.applyDeadband(-self.leftStick.getY(), 0.1)
         ySpeed = constants.kMaxSpeed * wpimath.applyDeadband(-self.leftStick.getX(), 0.1)
         turnSpeed = wpimath.applyDeadband(-self.rightStick.getX(), 0.1)
 
+        # Precision mode
         if self.leftStick.getRawButton(1) or self.rightStick.getRawButton(1):
             xSpeed *= 0.5
             ySpeed *= 0.5
             turnSpeed *= 0.5
+
+        # Flip to red alliance if necessary
+        if utils.isRedAlliance():
+            xSpeed *= -1
+            ySpeed *= -1
+
+        # Drive
         self.drivetrain.drive(xSpeed, ySpeed, turnSpeed * constants.kMaxTurnSpeed)
 
         if self.leftStick.getRawButtonPressed(8):
-            self.drivetrain.reset_heading()
+            self.drivetrain.reset_heading(utils.driverForwardAngle())
 
         gamePieceSpeed = self.gamePad.getRightTriggerAxis()-self.gamePad.getLeftTriggerAxis()
 
@@ -263,8 +274,3 @@ class MyRobot(wpilib.TimedRobot):
                     ntutil.logAlert(self.badTrajectoryAlert, autoName)
             except ValueError as err:
                 ntutil.logAlert(self.badTrajectoryAlert, err)
-
-    # ================= UTILITY METHODS =================
-
-    def isRedAlliance(self):
-        return wpilib.DriverStation.getAlliance() == wpilib.DriverStation.Alliance.kRed
