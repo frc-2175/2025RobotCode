@@ -18,6 +18,7 @@ import constants
 import ntutil
 import utils
 from gentools import doneable
+from sim.simswerve import SwerveDriveSim
 from subsystems.drivetrain import Drivetrain
 from subsystems.elevatorandarm import ElevatorAndArm
 from subsystems.hanger import Hanger
@@ -41,6 +42,9 @@ class MyRobot(wpilib.TimedRobot):
         self.drivetrain = Drivetrain()
         self.elevatorandarm = ElevatorAndArm()
         self.hanger = Hanger()
+
+        # Simulated subsystems
+        self.simDrivetrain = SwerveDriveSim(self.drivetrain)
 
         # Auto and commands
         self.autoTimer = wpilib.Timer()
@@ -101,6 +105,9 @@ class MyRobot(wpilib.TimedRobot):
             self.scoringModeTopic.set("Algae")
         else:
             self.scoringModeTopic.set("???")
+        
+        if self.isSimulation():
+            self.simDrivetrain.simulationPeriodic(0.02)
 
 
     def disabledInit(self):

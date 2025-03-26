@@ -15,10 +15,10 @@ import constants
 import ntutil
 import utils
 from chassisspeeds import ChassisSpeeds2175
+from swerveheading import SwerveHeadingController
 from swervemodule import SwerveModule
 from utils import RotationSlewRateLimiter
 
-from swerveheading import SwerveHeadingController
 
 class Drivetrain:
     def __init__(self):
