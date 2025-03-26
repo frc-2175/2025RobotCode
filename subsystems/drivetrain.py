@@ -3,6 +3,7 @@ import math
 import choreo.trajectory
 import navx
 import wpilib
+import wpimath.units
 from photonlibpy import PhotonCamera, PhotonPoseEstimator, PoseStrategy
 from robotpy_apriltag import AprilTagField, AprilTagFieldLayout
 from wpilib import DriverStation
@@ -86,7 +87,11 @@ class Drivetrain:
         self.speedLimiter = SlewRateLimiter(constants.kSpeedSlewRate) #m/s
         self.rotationLimiter = SlewRateLimiter(constants.kRotationSlewRate) #rad/s
         self.directionLimiter = RotationSlewRateLimiter(constants.kDirectionSlewRate) #rad/s
-        self.headingController = SwerveHeadingController(self.gyro, SwerveHeadingMode.HUMAN_DRIVERS)
+        self.headingController = SwerveHeadingController(
+            getHeading=self.get_heading,
+            getRate=self.get_heading_rate,
+            mode=SwerveHeadingMode.HUMAN_DRIVERS,
+        )
         
 
     def periodic(self):
@@ -184,6 +189,21 @@ class Drivetrain:
     def get_heading(self) -> Rotation2d:
         return self.odometry.getPose().rotation()
 
+    def get_heading_rate(self) -> float:
+        """
+        The NavX reports its rate in degrees/second instead of radians/second.
+        Please use this method instead of `self.gyro.getRate()` for our own
+        sanity.
+
+        Also, be aware that `getRate()` has a history of being totally broken:
+        https://github.com/kauailabs/navxmxp/issues/69
+
+        But this was probably fixed (probably!) for the 2025 season:
+        https://github.com/Studica-Robotics/NavX/issues/5
+        https://github.com/Studica-Robotics/NavX/issues/6
+        """
+        return wpimath.units.degreesToRadians(self.gyro.getRate())
+
     def drive(self, xSpeed: float, ySpeed: float, turnSpeed: float):
         """
         Drives the robot in the given direction IN FIELD COORDINATES. Note that because we use the
@@ -219,8 +239,13 @@ class Drivetrain:
         self.badChoreoModeAlert.set(self.headingController.mode != SwerveHeadingMode.FORCE_HEADING)
         self.headingController.setGoal(Rotation2d(sample.heading))
     
-    def set_heading_controller_mode(self, mode: SwerveHeadingMode):
-        self.headingController.setMode(mode)
+    def set_heading_controller_to_teleop(self):
+        self.headingController.setMode(SwerveHeadingMode.HUMAN_DRIVERS)
+        self.headingController.setPID(constants.kHeadingTeleopP, constants.kHeadingTeleopI, constants.kHeadingTeleopD)
+
+    def set_heading_controller_to_autonomous(self):
+        self.headingController.setMode(SwerveHeadingMode.FORCE_HEADING)
+        self.headingController.setPID(constants.kHeadingAutoP, constants.kHeadingAutoI, constants.kHeadingAutoD)
 
     def reset_heading(self, angle: float):
         self.odometry.resetRotation(Rotation2d(angle))
