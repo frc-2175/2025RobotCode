@@ -1,5 +1,7 @@
 import math
 
+import wpilib
+
 
 def lerp(a: float, b: float, t: float) -> float:
     return (1-t) * a + t * b
@@ -72,3 +74,12 @@ class RotationSlewRateLimiter:
 
     def setRateLimit(self, rateLimit: float): # rad/s
         self.rateLimit = rateLimit
+
+def isRedAlliance():
+    return wpilib.DriverStation.getAlliance() == wpilib.DriverStation.Alliance.kRed
+
+def driverForwardAngle() -> float:
+    if isRedAlliance():
+        return math.pi
+    else:
+        return 0

@@ -172,10 +172,18 @@ class Drivetrain:
         return self.odometry.getPose()
 
     def get_heading(self) -> Rotation2d:
-        return self.gyro.getRotation2d()
+        return self.odometry.getPose().rotation()
 
     def drive(self, xSpeed: float, ySpeed: float, turnSpeed: float, angle: Rotation2d | None = None):
-        newSpeeds = ChassisSpeeds2175.fromFieldRelativeSpeeds(xSpeed, ySpeed, turnSpeed, self.gyro.getRotation2d())
+        """
+        Drives the robot in the given direction IN FIELD COORDINATES. Note that because we use the
+        "always blue origin" convention, as described in the WPILib docs, this means that
+        speeds must be flipped when humans are driving on the red alliance side of the field.
+
+        https://docs.wpilib.org/en/stable/docs/software/basic-programming/coordinate-system.html#always-blue-origin
+        """
+
+        newSpeeds = ChassisSpeeds2175.fromFieldRelativeSpeeds(xSpeed, ySpeed, turnSpeed, self.get_heading())
 
         # If stopping the robot, preserve the old direction instead of going to
         # angle 0. The speeds will indeed be exactly equal to zero in teleop
@@ -203,6 +211,6 @@ class Drivetrain:
             sample.vy + self.y_controller.calculate(pose.Y(), sample.y),
             sample.omega, # TODO: Add heading controller - see Getting Started docs for Choreo
         )
-        
-    def reset_heading(self):
-        self.gyro.reset()
+
+    def reset_heading(self, angle: float):
+        self.odometry.resetRotation(Rotation2d(angle))
