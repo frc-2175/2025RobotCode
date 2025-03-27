@@ -22,6 +22,17 @@ kDirectionSlewRate = 1.2 * kMaxTurnSpeed # rad/s
 kSpeedSlewRate = 1.8 * kMaxSpeed # m/s
 kRotationSlewRate = 2.0 * kMaxTurnSpeed # m/s
 
+kHeadingControllerP = 1 / wpimath.units.degreesToRadians(15)
+kHeadingControllerI = 0
+kHeadingControllerD = 0
+
+kChoreoTranslationP = 1 / wpimath.units.inchesToMeters(20)
+kChoreoTranslationI = 0
+kChoreoTranslationD = 0
+kChoreoRotationP = 1 / wpimath.units.degreesToRadians(5)
+kChoreoRotationI = 0
+kChoreoRotationD = 0
+
 # Elevator
 kMaxElevatorSpeed = wpimath.units.inchesToMeters(9) # m/s
 kMinElevatorHeight = wpimath.units.inchesToMeters(0.1) # m

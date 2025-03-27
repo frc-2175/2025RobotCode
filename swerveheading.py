@@ -1,55 +1,89 @@
-from enum import Enum
 import math
-import navx
+from enum import Enum
+from typing import Callable
+
+import wpilib
 import wpimath.controller
+import wpimath.units
 from wpimath.geometry import Rotation2d
+
+import constants
 import ntutil
 
-class SwerveHeadingState(Enum):
-    OFF = 0
-    MAINTAIN = 1
-    DISABLE = 2
+
+class SwerveHeadingMode(Enum):
+    DISABLED = 0
+    """
+    Entirely shut off the heading controller. Rotation speed will be passed
+    through unmodified.
+    """
+
+    HUMAN_DRIVERS = 1
+    """
+    The heading controller will try to maintain the current heading, but will
+    temporarily turn off if the drivers steer the robot, or if something causes
+    the robot to physically rotate in an unexpected way.
+    """
+
 
 class SwerveHeadingController:
-    state: SwerveHeadingState
-    goal: Rotation2d
-
-    def __init__(self, gyro: navx.AHRS) -> None:
-        self.gyro = gyro
-        self.state = SwerveHeadingState.OFF
-        self.shouldMaintain = False
-        self.goal = self.gyro.getRotation2d()
-        self.PID = wpimath.controller.PIDController(1 / math.radians(15), 0, 0)
+    def __init__(self, getHeading: Callable[[], Rotation2d], getRate: Callable[[], float], mode: SwerveHeadingMode) -> None:
+        self.getHeading = getHeading
+        self.getRate = getRate
+        self.mode: SwerveHeadingMode = mode
+        self.goal: Rotation2d = self.getHeading()
+        self.PID = wpimath.controller.PIDController(
+            constants.kHeadingControllerP,
+            constants.kHeadingControllerI,
+            constants.kHeadingControllerD,
+        )
         self.PID.enableContinuousInput(-math.pi, math.pi)
 
-        self.turningTopic = ntutil.getBooleanTopic("/isTurning")
-        self.translatingTOpic = ntutil.getBooleanTopic("/isTranslating")
+        self.stateTopic = ntutil.getStringTopic("/SwerveHeading/State")
+        self.goalTopic = ntutil.getStructTopic("/SwerveHeading/Goal", Rotation2d)
+        self.turningTopic = ntutil.getBooleanTopic("/SwerveHeading/IsTurning")
+        self.translatingTopic = ntutil.getBooleanTopic("/SwerveHeading/IsTranslating")
+        self.maintainingTopic = ntutil.getBooleanTopic("/SwerveHeading/IsMaintaining")
+        self.gyroRateTopic = ntutil.getFloatTopic("/SwerveHeading/GyroRate")
+        self.outputTopic = ntutil.getFloatTopic("/SwerveHeading/Output")
 
-    def update(self, xSpeed: float, ySpeed: float, rot: float) -> float:
-        if self.state == SwerveHeadingState.DISABLE:
-            return rot
-        
-        bot_turning = math.fabs(rot) > 0.1 or math.fabs(self.gyro.getRate()) > 1
-        bot_translating = xSpeed != 0 or ySpeed != 0
-        shouldChangeToMaintain = not bot_turning and bot_translating
+        self.badModeAlert = wpilib.Alert("Bad mode for swerve heading controller", wpilib.Alert.AlertType.kError)
 
-        self.turningTopic.set(bot_turning)
-        self.translatingTOpic.set(bot_translating)
+    def update(self, speed: float, rot: float) -> float:
+        self.stateTopic.set(str(self.mode))
+        self.goalTopic.set(self.goal)
+        self.gyroRateTopic.set(self.getRate())
 
-        if shouldChangeToMaintain:
-            self.state = SwerveHeadingState.MAINTAIN
-            self.PID.setSetpoint(self.goal.radians())
+        self.PID.setSetpoint(self.goal.radians())
+
+        if self.mode == SwerveHeadingMode.DISABLED:
+            output = rot
+        elif self.mode == SwerveHeadingMode.HUMAN_DRIVERS:
+            # TODO: Validate if 15 deg/s is a reasonable threshold for disabling the controller.
+            bot_turning = abs(rot) > 0.1 or abs(self.getRate()) > wpimath.units.degreesToRadians(15)
+            bot_translating = speed > 0
+            should_maintain_heading = not bot_turning and bot_translating
+
+            self.turningTopic.set(bot_turning)
+            self.translatingTopic.set(bot_translating)
+            self.maintainingTopic.set(should_maintain_heading)
+
+            if should_maintain_heading:
+                # Run PID with the previously-set goal, ignoring `rot`
+                output = self.PID.calculate(self.getHeading().radians())
+            else:
+                # Use `rot`, and update the goal to the current gyro angle to maintain later.
+                self.goal = self.getHeading()
+                output = rot
         else:
-            self.state = SwerveHeadingState.OFF
-            self.goal = self.gyro.getRotation2d()
-        
-        if self.state == SwerveHeadingState.OFF:
-            return rot
-        else:
-            return self.PID.calculate(self.gyro.getRotation2d().radians())
-        
-    def setGoal(self, goal: Rotation2d): # because navX is clockwise positive, we have to negate it
+            ntutil.logAlert(self.badModeAlert, self.mode)
+            output = rot
+
+        self.outputTopic.set(output)
+        return output
+
+    def setGoal(self, goal: Rotation2d):
         self.goal = goal
 
-    def setState(self, state: SwerveHeadingState):
-        self.state = state
+    def setMode(self, state: SwerveHeadingMode):
+        self.mode = state

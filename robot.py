@@ -22,6 +22,7 @@ from sim.simswerve import SwerveDriveSim
 from subsystems.drivetrain import Drivetrain
 from subsystems.elevatorandarm import ElevatorAndArm
 from subsystems.hanger import Hanger
+from swerveheading import SwerveHeadingMode
 
 # from urcl import URCL
 
@@ -127,6 +128,8 @@ class MyRobot(wpilib.TimedRobot):
 
 
     def autonomousInit(self) -> None:
+        self.drivetrain.set_heading_controller_to_autonomous()
+
         self.trajectory = self.trajectoryChooser.getSelected()
         if self.trajectory:
             initial_pose = self.trajectory.get_initial_pose(utils.isRedAlliance())
@@ -167,6 +170,10 @@ class MyRobot(wpilib.TimedRobot):
                 self.drivetrain.drive(0, 0, 0)
         
         self.previousAutoTime = currentAutoTime
+
+
+    def teleopInit(self) -> None:
+        self.drivetrain.set_heading_controller_to_teleop()
 
 
     def teleopPeriodic(self) -> None:
