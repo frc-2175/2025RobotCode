@@ -3,3 +3,5 @@ simgui*.json
 networktables.json
 *.wpilog
 .DS_Store
+
+shuffleboard.json
