@@ -25,12 +25,6 @@ class SwerveHeadingMode(Enum):
     the robot to physically rotate in an unexpected way.
     """
 
-    FORCE_HEADING = 2
-    """
-    The heading controller will always attempt to steer the bot toward a
-    particular heading, regardless of human control or other factors.
-    """
-
 
 class SwerveHeadingController:
     def __init__(self, getHeading: Callable[[], Rotation2d], getRate: Callable[[], float], mode: SwerveHeadingMode) -> None:
@@ -38,7 +32,11 @@ class SwerveHeadingController:
         self.getRate = getRate
         self.mode: SwerveHeadingMode = mode
         self.goal: Rotation2d = self.getHeading()
-        self.PID = wpimath.controller.PIDController(constants.kHeadingTeleopP, constants.kHeadingTeleopI, constants.kHeadingTeleopD)
+        self.PID = wpimath.controller.PIDController(
+            constants.kHeadingControllerP,
+            constants.kHeadingControllerI,
+            constants.kHeadingControllerD,
+        )
         self.PID.enableContinuousInput(-math.pi, math.pi)
 
         self.stateTopic = ntutil.getStringTopic("/SwerveHeading/State")
@@ -77,8 +75,6 @@ class SwerveHeadingController:
                 # Use `rot`, and update the goal to the current gyro angle to maintain later.
                 self.goal = self.getHeading()
                 output = rot
-        elif self.mode == SwerveHeadingMode.FORCE_HEADING:
-            output = self.PID.calculate(self.getHeading().radians())
         else:
             ntutil.logAlert(self.badModeAlert, self.mode)
             output = rot
@@ -91,6 +87,3 @@ class SwerveHeadingController:
 
     def setMode(self, state: SwerveHeadingMode):
         self.mode = state
-
-    def setPID(self, kP: float, kI: float, kD: float):
-        self.PID.setPID(kP, kI, kD)

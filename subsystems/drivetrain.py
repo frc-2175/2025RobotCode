@@ -55,11 +55,10 @@ class Drivetrain:
         )
 
         # Choreo PID controllers
-        self.x_controller = PIDController(0, 0, 0)
-        self.y_controller = PIDController(0, 0, 0) 
-        self.choreo_heading_controller = PIDController(0, 0, 0)
-
-        self.choreo_heading_controller.enableContinuousInput(-math.pi, math.pi)
+        self.choreoXController = PIDController(constants.kChoreoTranslationP, constants.kChoreoTranslationI, constants.kChoreoTranslationD)
+        self.choreoYController = PIDController(constants.kChoreoTranslationP, constants.kChoreoTranslationI, constants.kChoreoTranslationD)
+        self.choreoHeadingController = PIDController(constants.kChoreoRotationP, constants.kChoreoRotationI, constants.kChoreoRotationD)
+        self.choreoHeadingController.enableContinuousInput(-math.pi, math.pi)
 
         # PhotonVision
         # https://docs.photonvision.org/en/latest/docs/programming/photonlib/robot-pose-estimator.html#apriltags-and-photonposeestimator
@@ -81,7 +80,7 @@ class Drivetrain:
         self.robotPoseTopic = ntutil.getStructTopic("/RobotPose", Pose2d)
         self.visionPoseTopic = ntutil.getStructTopic("/VisionPose", Pose3d)
 
-        self.badChoreoModeAlert = wpilib.Alert("Choreo requires SwerveHeadingMode.FORCE_HEADING", wpilib.Alert.AlertType.kError)
+        self.badChoreoModeAlert = wpilib.Alert("Choreo requires SwerveHeadingMode.DISABLED", wpilib.Alert.AlertType.kError)
 
         # Control variables
         self.speedLimiter = SlewRateLimiter(constants.kSpeedSlewRate) #m/s
@@ -231,21 +230,19 @@ class Drivetrain:
         pose = self.get_pose()
 
         self.drive(
-            sample.vx + self.x_controller.calculate(pose.X(), sample.x),
-            sample.vy + self.y_controller.calculate(pose.Y(), sample.y),
-            0, # Turn speed will be controlled by the heading controller below.
+            sample.vx + self.choreoXController.calculate(pose.X(), sample.x),
+            sample.vy + self.choreoYController.calculate(pose.Y(), sample.y),
+            sample.omega + self.choreoHeadingController.calculate(pose.rotation().radians(), sample.heading),
         )
 
-        self.badChoreoModeAlert.set(self.headingController.mode != SwerveHeadingMode.FORCE_HEADING)
+        self.badChoreoModeAlert.set(self.headingController.mode != SwerveHeadingMode.DISABLED)
         self.headingController.setGoal(Rotation2d(sample.heading))
     
     def set_heading_controller_to_teleop(self):
         self.headingController.setMode(SwerveHeadingMode.HUMAN_DRIVERS)
-        self.headingController.setPID(constants.kHeadingTeleopP, constants.kHeadingTeleopI, constants.kHeadingTeleopD)
 
     def set_heading_controller_to_autonomous(self):
-        self.headingController.setMode(SwerveHeadingMode.FORCE_HEADING)
-        self.headingController.setPID(constants.kHeadingAutoP, constants.kHeadingAutoI, constants.kHeadingAutoD)
+        self.headingController.setMode(SwerveHeadingMode.DISABLED)
 
     def reset_heading(self, angle: float):
         self.odometry.resetRotation(Rotation2d(angle))
