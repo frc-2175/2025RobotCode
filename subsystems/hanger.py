@@ -5,6 +5,7 @@ import rev
 import wpilib
 import wpimath
 from wpimath.filter import SlewRateLimiter
+import wpimath.units
 import constants
 import ntutil
 import utils
@@ -24,12 +25,12 @@ class Hanger:
         (
             hangerMotorConfig
                 .setIdleMode(rev.SparkBaseConfig.IdleMode.kBrake)
-                .smartCurrentLimit(40)
+                .smartCurrentLimit(60)
         )
         (
             hangerMotorConfig
                 .closedLoop
-                    .pid(0.6, 0, 0)
+                    .pid(1/wpimath.units.degreesToRadians(10), 0, 0)
                     .setFeedbackSensor(rev.ClosedLoopConfig.FeedbackSensor.kPrimaryEncoder)
         )
         (

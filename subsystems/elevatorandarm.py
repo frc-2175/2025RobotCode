@@ -194,6 +194,7 @@ class ElevatorAndArm:
         self.intakeSpeed = 0 # commanded from outside, will use duty cycle
         self.previousIntakeSpeed = 0
         self.intakeMode: Literal["coral"] | Literal["algae"] = "coral"
+        self.algaeReverse = False
 
 
     def periodic(self):
@@ -242,8 +243,14 @@ class ElevatorAndArm:
                     self.armInnerWheelController.setReference(-self.intakeSpeed * constants.kSquishyWheelCoralSpeed, rev.SparkMax.ControlType.kDutyCycle)
                     self.armOuterWheelController.setReference(self.intakeSpeed * constants.kSquishyWheelCoralSpeed, rev.SparkMax.ControlType.kDutyCycle)
         elif self.intakeMode == "algae":
-            self.armInnerWheelController.setReference(-self.intakeSpeed * constants.kSquishyWheelAlgaeSpeed, rev.SparkMax.ControlType.kDutyCycle)
-            self.armOuterWheelController.setReference(-self.intakeSpeed * constants.kSquishyWheelAlgaeSpeed, rev.SparkMax.ControlType.kDutyCycle)
+            finalIntakeSpeed = 0
+            if self.algaeReverse:
+                finalIntakeSpeed = -1 * self.intakeSpeed
+            else:
+                finalIntakeSpeed = self.intakeSpeed
+            self.armInnerWheelController.setReference(finalIntakeSpeed * constants.kSquishyWheelAlgaeSpeed, rev.SparkMax.ControlType.kDutyCycle)
+            self.armOuterWheelController.setReference(
+                finalIntakeSpeed * constants.kSquishyWheelAlgaeSpeed, rev.SparkMax.ControlType.kDutyCycle)
 
         self.previousIntakeSpeed = self.intakeSpeed
         self.previousCoralDetected = self.coral_detected()
@@ -286,7 +293,7 @@ class ElevatorAndArm:
     def go_to_coral_preset(self, level: int):
         coralPresets = {
             1: (constants.kElevatorL1, constants.kWristUprightAngle, wpimath.units.inchesToMeters(8)),
-            2: (constants.kElevatorL2, constants.kWristCoralScoreAngle, wpimath.units.inchesToMeters(6)),
+            2: (constants.kElevatorL2, constants.kWristCoralScoreAngle, wpimath.units.inchesToMeters(4)),
             3: (constants.kElevatorL3, constants.kWristCoralScoreAngle, wpimath.units.inchesToMeters(4)),
             4: (constants.kElevatorL4, constants.kWristHighCoralScoreAngle, wpimath.units.inchesToMeters(2)),
         }
@@ -300,15 +307,18 @@ class ElevatorAndArm:
         self.set_coral_position(coralPosition)
 
     def go_to_algae_floor_preset(self):
+        self.algaeReverse = True
         self.intakeMode = "algae"
         self.set_arm_position(constants.kElevatorAlgaeGround, constants.kWristAlgaeGround, constants.kAlgaeMode)
 
     def go_to_algae_dereef_preset(self, high: bool):
         self.intakeMode = "algae"
         if high:
+            self.algaeReverse = False
             elevatorHeight = constants.kElevatorAlgaeHigh
         else:
             elevatorHeight = constants.kElevatorAlgaeLow
+            self.algaeReverse = True
         self.set_arm_position(elevatorHeight, constants.kWristAlgaeDereef, constants.kAlgaeMode)
 
     def move_coral_manually(self, speed: float):

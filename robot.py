@@ -66,12 +66,10 @@ class MyRobot(wpilib.TimedRobot):
         self.noAutoAlert = Alert("No autonomous trajectory", Alert.AlertType.kWarning)
         self.noAutoSampleAlert = Alert("No sample for autonomous trajectory; stopping bot", Alert.AlertType.kWarning)
         self.scoringModeImproperValue = Alert("Variable scoringMode improper value (expected kCoralMode or kAlgaeMode)", Alert.AlertType.kError)
-        self.algaeReverseImproperValue = Alert("Variable algaeReverse improper value (expected True or False)", Alert.AlertType.kError)
         self.redAllianceWhenTestingAlert = Alert("Do not use red alliance in testing! Controls will be inverted.", Alert.AlertType.kWarning)
 
         # Control state
         self.scoringMode = constants.kCoralMode
-        self.algaeReverse: bool = False
         self.previousAutoTime: float = 0
 
         # Controls telemetry
@@ -227,20 +225,12 @@ class MyRobot(wpilib.TimedRobot):
         elif self.scoringMode == constants.kAlgaeMode:
             if self.gamePad.getAButton():
                 self.elevatorandarm.go_to_algae_floor_preset()
-                self.algaeReverse = False
             elif self.gamePad.getXButton() or self.gamePad.getBButton():
                 self.elevatorandarm.go_to_algae_dereef_preset(high=False)
-                self.algaeReverse = False
             elif self.gamePad.getYButton():
                 self.elevatorandarm.go_to_algae_dereef_preset(high=True)
-                self.algaeReverse = True
             
-            if self.algaeReverse == True:
-                self.elevatorandarm.move_algae(gamePieceSpeed)
-            elif self.algaeReverse == False:
-                self.elevatorandarm.move_algae(-gamePieceSpeed)
-            else:
-                ntutil.logAlert(self.algaeReverseImproperValue, self.algaeReverse)
+            self.elevatorandarm.move_algae(gamePieceSpeed)
 
         else:
             ntutil.logAlert(self.scoringModeImproperValue, self.scoringMode)
