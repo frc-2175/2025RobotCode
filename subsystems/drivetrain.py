@@ -9,7 +9,7 @@ from robotpy_apriltag import AprilTagField, AprilTagFieldLayout
 from wpilib import DriverStation
 from wpimath.controller import PIDController
 from wpimath.filter import SlewRateLimiter
-from wpimath.geometry import Pose2d, Pose3d, Rotation2d, Translation2d
+from wpimath.geometry import Pose2d, Pose3d, Rotation2d, Translation2d, Transform3d
 from wpimath.kinematics import (ChassisSpeeds, SwerveDrive4Kinematics,
                                 SwerveDrive4Odometry, SwerveModuleState)
 
@@ -62,14 +62,14 @@ class Drivetrain:
 
         # PhotonVision
         # https://docs.photonvision.org/en/latest/docs/programming/photonlib/robot-pose-estimator.html#apriltags-and-photonposeestimator
-        # self.camera = PhotonCamera("vision_camera")
+        self.camera = PhotonCamera("front")
 
-        # self.cameraPoseEst = PhotonPoseEstimator(
-        #     AprilTagFieldLayout.loadField(AprilTagField.k2025ReefscapeWelded),
-        #     PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
-        #     self.camera,
-        #     constants.kRobotToCam
-        # )
+        self.cameraPoseEst = PhotonPoseEstimator(
+            AprilTagFieldLayout.loadField(AprilTagField.k2025ReefscapeWelded),
+            PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
+            self.camera,
+            constants.kRobotToCam
+        )
 
         # Telemetry
         self.desiredSwerveStatesTopic = ntutil.getStructArrayTopic("/SwerveStates/Desired", SwerveModuleState)
@@ -79,6 +79,7 @@ class Drivetrain:
         self.gyroTopic = ntutil.getStructTopic("/Gyro", Rotation2d)
         self.robotPoseTopic = ntutil.getStructTopic("/RobotPose", Pose2d)
         self.visionPoseTopic = ntutil.getStructTopic("/VisionPose", Pose3d)
+        self.photonTagTransformsTopic = ntutil.getStructArrayTopic("/PhotonTagTransforms", Transform3d)
 
         self.badChoreoModeAlert = wpilib.Alert("Choreo requires SwerveHeadingMode.DISABLED", wpilib.Alert.AlertType.kError)
 
@@ -178,6 +179,11 @@ class Drivetrain:
         # except:
         #     pass
 
+        try:
+            self.photonTagTransformsTopic.set(self.get_photon_targets())
+        except:
+            ntutil.log("Failed to retrieve any tags from PhotonVision")
+
     def reset_pose(self, pose: Pose2d):
         self.odometry.resetPose(pose)
         pass
@@ -246,3 +252,12 @@ class Drivetrain:
 
     def reset_heading(self, angle: float):
         self.odometry.resetRotation(Rotation2d(angle))
+
+    def get_photon_targets(self):
+        photon_detections = self.camera.getLatestResult().targets
+        target_transforms = []
+
+        for detection in photon_detections:
+            target_transforms.append(detection.bestCameraToTarget)
+        
+        return target_transforms
