@@ -14,7 +14,7 @@ driveMotorConfig.encoder.velocityConversionFactor(
 ).positionConversionFactor(
     math.pi * constants.kWheelDiameter / constants.kDriveMotorReduction 
 )
-driveMotorConfig.closedLoop.setFeedbackSensor(rev.ClosedLoopConfig.FeedbackSensor.kPrimaryEncoder).pidf(0.1,0,0,1 / constants.kMaxSpeed)
+driveMotorConfig.closedLoop.setFeedbackSensor(rev.ClosedLoopConfig.FeedbackSensor.kPrimaryEncoder).pidf(0,0,0,1 / constants.kMaxSpeed)
 
 steerMotorConfig = rev.SparkMaxConfig()
 steerMotorConfig.absoluteEncoder.positionConversionFactor(2 * math.pi).inverted(True)

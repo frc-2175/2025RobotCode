@@ -13,8 +13,8 @@ kDriveMotorFreeSpeed = 5676 / 60 #94.6 rev/s
 kWheelDistanceFromCenter = wpimath.units.inchesToMeters(12.375)
 
 kMaxSpeedTheoretical = math.pi * kWheelDiameter * kDriveMotorFreeSpeed / kDriveMotorReduction #4.46 m/s
-# kMaxSpeed = 0.8 * kMaxSpeedTheoretical
-kMaxSpeed = 0.5 * kMaxSpeedTheoretical
+kMaxSpeed = 0.9 * kMaxSpeedTheoretical
+# kMaxSpeed = 0.5 * kMaxSpeedTheoretical
 
 kMaxTurnSpeed = 2 * math.pi #rad/s
 
@@ -28,10 +28,10 @@ kHeadingControllerD = 0
 
 kChoreoTranslationP = 1 / wpimath.units.inchesToMeters(20)
 kChoreoTranslationI = 0
-kChoreoTranslationD = 0
-kChoreoRotationP = 1 / wpimath.units.degreesToRadians(5)
+kChoreoTranslationD = 1 / wpimath.units.feetToMeters(20)
+kChoreoRotationP = 1 / wpimath.units.degreesToRadians(30)
 kChoreoRotationI = 0
-kChoreoRotationD = 0
+kChoreoRotationD = 1 / wpimath.units.degreesToRadians(75)
 
 # Elevator
 kMaxElevatorSpeed = wpimath.units.inchesToMeters(9) # m/s
