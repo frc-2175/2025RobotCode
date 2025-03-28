@@ -1,0 +1,36 @@
+{
+    "camera": "USB Camera (0c45:636d)",
+    "platform": "Windows NT 10.0; Win64; x64",
+    "camera_matrix": [
+        [
+            1114.6748714541532,
+            0,
+            601.9236554283575
+        ],
+        [
+            0,
+            1114.4562972466824,
+            396.85841996111293
+        ],
+        [
+            0,
+            0,
+            1
+        ]
+    ],
+    "distortion_coefficients": [
+        -0.438038715556355,
+        0.2339185955546226,
+        0.0007093900249097958,
+        -0.0012083834627078611,
+        -0.06871457570011112
+    ],
+    "distortion_model": "rectilinear",
+    "avg_reprojection_error": 0.20020043116102038,
+    "img_size": [
+        1280,
+        720
+    ],
+    "keyframes": 8,
+    "calibration_time": "Thu, 27 Mar 2025 00:38:26 GMT"
+}
