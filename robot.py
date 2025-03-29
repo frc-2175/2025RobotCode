@@ -112,7 +112,7 @@ class MyRobot(wpilib.TimedRobot):
 
 
     def disabledInit(self):
-        self.drivetrain.drive(0, 0, 0)
+        self.drivetrain.drive_field_relative(0, 0, 0)
         self.autoTrajectoryTopic.set([])
 
 
@@ -166,7 +166,7 @@ class MyRobot(wpilib.TimedRobot):
                             ntutil.log(f"Autonomous event not recognized; skipping: {event.event}")
             else:
                 # We should always have samples. If not, stop the bot.
-                self.drivetrain.drive(0, 0, 0)
+                self.drivetrain.drive_field_relative(0, 0, 0)
         
         self.previousAutoTime = currentAutoTime
 
@@ -176,24 +176,31 @@ class MyRobot(wpilib.TimedRobot):
 
 
     def teleopPeriodic(self) -> None:
-        # Get speeds from joysticks (assuming blue alliance for now)
-        xSpeed = constants.kMaxSpeed * wpimath.applyDeadband(-self.leftStick.getY(), 0.1)
-        ySpeed = constants.kMaxSpeed * wpimath.applyDeadband(-self.leftStick.getX(), 0.1)
+        # Get raw speeds from joysticks (to be converted to field/robot relative)
+        joystickX = constants.kMaxSpeed * wpimath.applyDeadband(self.leftStick.getX(), 0.1)
+        joystickY = constants.kMaxSpeed * wpimath.applyDeadband(self.leftStick.getY(), 0.1)
+
+        # Turn speed is the same regardless of field/robot relative
         turnSpeed = wpimath.applyDeadband(-self.rightStick.getX(), 0.1)
 
         # Precision mode
         if self.leftStick.getRawButton(1) or self.rightStick.getRawButton(1):
-            xSpeed *= 0.5
-            ySpeed *= 0.5
+            joystickX *= 0.5
+            joystickY *= 0.5
             turnSpeed *= 0.5
 
-        # Flip to red alliance if necessary
-        if utils.isRedAlliance():
-            xSpeed *= -1
-            ySpeed *= -1
-
         # Drive
-        self.drivetrain.drive(xSpeed, ySpeed, turnSpeed * constants.kMaxTurnSpeed)
+        doRobotRelative = self.leftStick.getRawButton(3) or self.rightStick.getRawButton(3)
+        if doRobotRelative:
+            self.drivetrain.drive_robot_relative(-joystickY, -joystickX, turnSpeed)
+        else:
+            # Flip to red alliance if necessary
+            xSpeed = -joystickY
+            ySpeed = -joystickX
+            if utils.isRedAlliance():
+                xSpeed *= -1
+                ySpeed *= -1
+            self.drivetrain.drive_field_relative(xSpeed, ySpeed, turnSpeed * constants.kMaxTurnSpeed)
 
         if self.leftStick.getRawButtonPressed(8):
             self.drivetrain.reset_heading(utils.driverForwardAngle())
