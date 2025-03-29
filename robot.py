@@ -61,6 +61,12 @@ class MyRobot(wpilib.TimedRobot):
             "c2": lambda: self.elevatorandarm.go_to_coral_preset(level=2),
             "c3": lambda: self.elevatorandarm.go_to_coral_preset(level=3),
             "c4": lambda: self.elevatorandarm.go_to_coral_preset(level=4),
+            "a1": lambda: self.elevatorandarm.go_to_algae_dereef_preset(False),
+            "a2": lambda: self.elevatorandarm.go_to_algae_dereef_preset(True),
+            "coralmove": lambda: self.elevatorandarm.move_coral_manually(1),
+            "coralstop": lambda: self.elevatorandarm.move_coral_manually(0),
+            "algaemove": lambda: self.elevatorandarm.move_algae(1),
+            "algaestop": lambda: self.elevatorandarm.move_algae(0),
         }
 
         # Alerts
