@@ -92,11 +92,12 @@ kSquishyWheelAlgaeSpeed = 0.4
 kArmHeightInCarriage = wpimath.units.inchesToMeters(5.5)
 kArmCoralRadius = wpimath.units.inchesToMeters(16)
 kArmAlgaeRadius = wpimath.units.inchesToMeters(21.5)
+kWristNudgeAmount = wpimath.units.degreesToRadians(45)
 
 #Arm Angle Presets
 kWristUprightAngle = wpimath.units.degreesToRadians(-5) #rad
 kWristCoralScoreAngle = wpimath.units.degreesToRadians(-30) #rad
-kWristHighCoralScoreAngle = wpimath.units.degreesToRadians(-55)
+kWristHighCoralScoreAngle = wpimath.units.degreesToRadians(-35)
 kWristAlgaeDereef = wpimath.units.degreesToRadians(-110) #rad
 kWristAlgaeGround = wpimath.units.degreesToRadians(-130) #rad
 
@@ -128,6 +129,10 @@ kHangerMotorReduction = (1 / 3) * (1 / 9) * (1 / 9)
 
 # Camera coordinates on robot
 kRobotToCam = wpimath.geometry.Transform3d(
-    wpimath.geometry.Translation3d(0, 0, 0),
+    wpimath.geometry.Translation3d(
+      wpimath.units.inchesToMeters(9),
+      wpimath.units.inchesToMeters(-9.25),
+      wpimath.units.inchesToMeters(22.75),
+    ),
     wpimath.geometry.Rotation3d.fromDegrees(0.0, 0.0, 0.0),
 )

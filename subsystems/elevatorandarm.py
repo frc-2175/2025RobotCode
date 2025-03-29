@@ -162,6 +162,7 @@ class ElevatorAndArm:
         self.wristAngleTopic = ntutil.getFloatTopic("/Wrist/Angle")
         self.wristAngleRawTopic = ntutil.getFloatTopic("/Wrist/AngleRaw")
         self.wristAngleSetpointTopic = ntutil.getFloatTopic("/Wrist/AngleSetpoint")
+        self.wristNudgeAmountTopic = ntutil.getFloatTopic("/Wrist/NudgeAmount")
         self.wristSafePositionTopic = ntutil.getFloatTopic("/Wrist/SafePosition")
         self.wristFFTopic = ntutil.getFloatTopic("/Wrist/FF")
         self.intakeSensorTopic = ntutil.getFloatTopic("/Intake/Sensor")
@@ -188,7 +189,8 @@ class ElevatorAndArm:
         # Control variables
         self.elevatorSetpoint = 0
         self.elevatorSetpointLimiter = SlewRateLimiter(1) #m/s
-        self.wristPositionSetpoint = 0.0
+        self.wristPositionSetpoint: float = 0
+        self.wristPositionNudge: float = 0
         self.previousCoralDetected = False
         self.intakeState: Literal["positional"] | Literal["duty cycle"] = "positional"
         self.intakeSpeed = 0 # commanded from outside, will use duty cycle
@@ -210,9 +212,13 @@ class ElevatorAndArm:
         self.wristAngleTopic.set(wristEncoderToAngle(self.wristEncoder.getPosition()))
         self.wristAngleRawTopic.set(self.wristEncoder.getPosition())
         self.wristAngleSetpointTopic.set(self.wristPositionSetpoint)
+        self.wristNudgeAmountTopic.set(self.wristPositionNudge)
+
+        # Nudge the wrist position from its setpoint (without affecting the elevator)
+        desiredWristAngle = self.wristPositionSetpoint + self.wristPositionNudge * constants.kWristNudgeAmount
 
         # Recalculate the new safe wrist position based on the current elevator height
-        safeWristPosition = self.get_safe_wrist_position(self.wristPositionSetpoint)
+        safeWristPosition = self.get_safe_wrist_position(desiredWristAngle)
         armFF = self.calculate_arm_ff()
         self.wristController.setReference(wristAngleToEncoder(safeWristPosition), rev.SparkMax.ControlType.kPosition, arbFeedforward=armFF)
 
@@ -220,7 +226,7 @@ class ElevatorAndArm:
         self.wristFFTopic.set(armFF)
 
         # Intake wheels
-        # !! IMPORTANT !! See intakeState.jpg!
+        # !! IMPORTANT !! See intakeState.jpg! (But note that it is out of date! Ha ha!)
         if self.intakeMode == "coral":
             if self.intakeState == "positional":
                 if self.previousIntakeSpeed == 0 and self.intakeSpeed != 0:
@@ -289,6 +295,10 @@ class ElevatorAndArm:
             # TODO: Make an alert
             ntutil.log("ERROR! Unknown mode!")
         self.elevatorSetpoint = self.compute_elevator_height(height, angle, radius)
+
+    def set_arm_nudge_amount(self, nudge: float):
+        nudge = utils.clamp(nudge, -1, 1)
+        self.wristPositionNudge = nudge
 
     def go_to_coral_preset(self, level: int):
         coralPresets = {

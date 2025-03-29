@@ -15,6 +15,8 @@ from wpimath.kinematics import (ChassisSpeeds, SwerveDrive4Kinematics,
                                 SwerveModuleState)
 from wpilib.cameraserver import CameraServer
 
+from wpilib.cameraserver import CameraServer
+
 import constants
 import ntutil
 import utils
@@ -94,7 +96,9 @@ class MyRobot(wpilib.TimedRobot):
         self.loadChoreoTrajectories()
 
         # Final initialization
-        self.elevatorandarm.set_arm_position(constants.kElevatorL1, constants.kWristUprightAngle, constants.kCoralMode)
+        self.elevatorandarm.go_to_coral_preset(1)
+
+        CameraServer().launch()
 
 
     def robotPeriodic(self):
@@ -115,7 +119,7 @@ class MyRobot(wpilib.TimedRobot):
 
 
     def disabledInit(self):
-        self.drivetrain.drive(0, 0, 0)
+        self.drivetrain.drive_field_relative(0, 0, 0)
         self.autoTrajectoryTopic.set([])
 
     def testInit(self):
@@ -149,6 +153,7 @@ class MyRobot(wpilib.TimedRobot):
 
     def autonomousInit(self) -> None:
         self.drivetrain.set_heading_controller_to_autonomous()
+        self.elevatorandarm.set_arm_nudge_amount(0)
 
         self.trajectory = self.trajectoryChooser.getSelected()
         if self.trajectory:
@@ -187,7 +192,7 @@ class MyRobot(wpilib.TimedRobot):
                             ntutil.log(f"Autonomous event not recognized; skipping: {event.event}")
             else:
                 # We should always have samples. If not, stop the bot.
-                self.drivetrain.drive(0, 0, 0)
+                self.drivetrain.drive_field_relative(0, 0, 0)
         
         self.previousAutoTime = currentAutoTime
 
@@ -197,24 +202,31 @@ class MyRobot(wpilib.TimedRobot):
 
 
     def teleopPeriodic(self) -> None:
-        # Get speeds from joysticks (assuming blue alliance for now)
-        xSpeed = constants.kMaxSpeed * wpimath.applyDeadband(-self.leftStick.getY(), 0.1)
-        ySpeed = constants.kMaxSpeed * wpimath.applyDeadband(-self.leftStick.getX(), 0.1)
+        # Get raw speeds from joysticks (to be converted to field/robot relative)
+        joystickX = constants.kMaxSpeed * wpimath.applyDeadband(self.leftStick.getX(), 0.1)
+        joystickY = constants.kMaxSpeed * wpimath.applyDeadband(self.leftStick.getY(), 0.1)
+
+        # Turn speed is the same regardless of field/robot relative
         turnSpeed = wpimath.applyDeadband(-self.rightStick.getX(), 0.1)
 
         # Precision mode
         if self.leftStick.getRawButton(1) or self.rightStick.getRawButton(1):
-            xSpeed *= 0.5
-            ySpeed *= 0.5
+            joystickX *= 0.5
+            joystickY *= 0.5
             turnSpeed *= 0.5
 
-        # Flip to red alliance if necessary
-        if utils.isRedAlliance():
-            xSpeed *= -1
-            ySpeed *= -1
-
         # Drive
-        self.drivetrain.drive(xSpeed, ySpeed, turnSpeed * constants.kMaxTurnSpeed)
+        doRobotRelative = self.leftStick.getRawButton(3) or self.rightStick.getRawButton(3)
+        if doRobotRelative:
+            self.drivetrain.drive_robot_relative(-joystickY, -joystickX, turnSpeed)
+        else:
+            # Flip to red alliance if necessary
+            xSpeed = -joystickY
+            ySpeed = -joystickX
+            if utils.isRedAlliance():
+                xSpeed *= -1
+                ySpeed *= -1
+            self.drivetrain.drive_field_relative(xSpeed, ySpeed, turnSpeed * constants.kMaxTurnSpeed)
 
         if self.leftStick.getRawButtonPressed(8):
             self.drivetrain.reset_heading(utils.driverForwardAngle())
@@ -251,11 +263,13 @@ class MyRobot(wpilib.TimedRobot):
                 self.elevatorandarm.go_to_algae_dereef_preset(high=False)
             elif self.gamePad.getYButton():
                 self.elevatorandarm.go_to_algae_dereef_preset(high=True)
-            
+
             self.elevatorandarm.move_algae(gamePieceSpeed)
 
         else:
             ntutil.logAlert(self.scoringModeImproperValue, self.scoringMode)
+
+        self.elevatorandarm.set_arm_nudge_amount(wpimath.applyDeadband(-self.gamePad.getRightY(), 0.1))
 
         if self.gamePad.getStartButton():
             self.hanger.trigger_solenoid()

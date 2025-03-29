@@ -186,7 +186,7 @@ class Drivetrain:
             if visionUpdate:
                 self.visionPose = visionUpdate.estimatedPose
                 self.visionPoseTopic.set(visionUpdate.estimatedPose)
-                self.odometry.addVisionMeasurement(visionUpdate.estimatedPose.toPose2d(), visionUpdate.timestampSeconds)
+                self.odometry.addVisionMeasurement(visionUpdate.estimatedPose.toPose2d(), visionUpdate.timestampSeconds, (4, 4, 8))
         except:
             ntutil.log("Failed to retrieve any tags from PhotonVision")
 
@@ -215,21 +215,15 @@ class Drivetrain:
         """
         return wpimath.units.degreesToRadians(self.gyro.getRate())
 
-    def drive(self, xSpeed: float, ySpeed: float, turnSpeed: float):
+    def drive_common(self, newSpeeds: ChassisSpeeds2175):
         """
-        Drives the robot in the given direction IN FIELD COORDINATES. Note that because we use the
-        "always blue origin" convention, as described in the WPILib docs, this means that
-        speeds must be flipped when humans are driving on the red alliance side of the field.
-
-        https://docs.wpilib.org/en/stable/docs/software/basic-programming/coordinate-system.html#always-blue-origin
+        DO NOT CALL THIS DIRECTLY. Call drive_robot_relative or drive_field_relative.
         """
-
-        newSpeeds = ChassisSpeeds2175.fromFieldRelativeSpeeds(xSpeed, ySpeed, turnSpeed, self.get_heading())
 
         # If stopping the robot, preserve the old direction instead of going to
         # angle 0. The speeds will indeed be exactly equal to zero in teleop
         # because xSpeed and ySpeed are the deadbanded joystick values.
-        if xSpeed == 0 and ySpeed == 0:
+        if newSpeeds.speed == 0:
             newSpeeds.direction = self.currentChassisSpeeds.direction
 
         # Limit the overall max speed.
@@ -238,10 +232,23 @@ class Drivetrain:
 
         self.desiredChassisSpeeds = newSpeeds
 
+    def drive_robot_relative(self, xSpeed: float, ySpeed: float, turnSpeed: float):
+        self.drive_common(ChassisSpeeds2175.fromFieldRelativeSpeeds(xSpeed, ySpeed, turnSpeed, Rotation2d(0)))
+
+    def drive_field_relative(self, xSpeed: float, ySpeed: float, turnSpeed: float):
+        """
+        Drives the robot in the given direction IN FIELD COORDINATES. Note that because we use the
+        "always blue origin" convention, as described in the WPILib docs, this means that
+        speeds must be flipped when humans are driving on the red alliance side of the field.
+
+        https://docs.wpilib.org/en/stable/docs/software/basic-programming/coordinate-system.html#always-blue-origin
+        """
+        self.drive_common(ChassisSpeeds2175.fromFieldRelativeSpeeds(xSpeed, ySpeed, turnSpeed, self.get_heading()))
+
     def follow_choreo_trajectory(self, sample: choreo.trajectory.SwerveSample):
         pose = self.get_pose()
 
-        self.drive(
+        self.drive_field_relative(
             sample.vx + self.choreoXController.calculate(pose.X(), sample.x),
             sample.vy + self.choreoYController.calculate(pose.Y(), sample.y),
             sample.omega + self.choreoHeadingController.calculate(pose.rotation().radians(), sample.heading),
