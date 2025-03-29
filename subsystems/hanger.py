@@ -30,7 +30,7 @@ class Hanger:
         (
             hangerMotorConfig
                 .closedLoop
-                    .pid(1/wpimath.units.degreesToRadians(10), 0, 0)
+                    .pid(1/wpimath.units.degreesToRadians(6), 0, 0)
                     .setFeedbackSensor(rev.ClosedLoopConfig.FeedbackSensor.kPrimaryEncoder)
         )
         (

@@ -9,7 +9,7 @@ from robotpy_apriltag import AprilTagField, AprilTagFieldLayout
 from wpilib import DriverStation
 from wpimath.controller import PIDController
 from wpimath.filter import SlewRateLimiter
-from wpimath.geometry import Pose2d, Pose3d, Rotation2d, Translation2d, Transform3d
+from wpimath.geometry import Pose2d, Pose3d, Rotation2d, Rotation3d, Translation2d, Transform3d
 from wpimath.kinematics import (ChassisSpeeds, SwerveDrive4Kinematics,
                                 SwerveDrive4Odometry, SwerveModuleState)
 
@@ -92,6 +92,8 @@ class Drivetrain:
             getRate=self.get_heading_rate,
             mode=SwerveHeadingMode.HUMAN_DRIVERS,
         )
+
+        self.visionPose = Pose3d()
         
 
     def periodic(self):
@@ -174,13 +176,14 @@ class Drivetrain:
         )
 
         self.robotPoseTopic.set(self.odometry.getPose())
-        # try:
-        #     self.visionPoseTopic.set(self.cameraPoseEst.update().estimatedPose)
-        # except:
-        #     pass
 
         try:
             self.photonTagTransformsTopic.set(self.get_photon_targets())
+            visionUpdate = self.cameraPoseEst.update()
+            if visionUpdate:
+                self.visionPose = visionUpdate.estimatedPose
+                self.visionPoseTopic.set(visionUpdate.estimatedPose)
+                # TODO: addVisionMeasurement for odometry
         except:
             ntutil.log("Failed to retrieve any tags from PhotonVision")
 
