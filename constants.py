@@ -129,6 +129,10 @@ kHangerMotorReduction = (1 / 3) * (1 / 9) * (1 / 9)
 
 # Camera coordinates on robot
 kRobotToCam = wpimath.geometry.Transform3d(
-    wpimath.geometry.Translation3d(0, 0, 0),
+    wpimath.geometry.Translation3d(
+      wpimath.units.inchesToMeters(9),
+      wpimath.units.inchesToMeters(-9.25),
+      wpimath.units.inchesToMeters(22.75),
+    ),
     wpimath.geometry.Rotation3d.fromDegrees(0.0, 0.0, 0.0),
 )
