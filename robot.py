@@ -13,6 +13,7 @@ from wpilib import Alert, DriverStation, SmartDashboard
 from wpimath.geometry import Pose2d, Pose3d, Rotation2d, Translation2d
 from wpimath.kinematics import (ChassisSpeeds, SwerveDrive4Kinematics,
                                 SwerveModuleState)
+from wpilib.cameraserver import CameraServer
 
 import constants
 import ntutil
@@ -81,6 +82,8 @@ class MyRobot(wpilib.TimedRobot):
         self.autoChassisSpeedsTopic = ntutil.getStructTopic("/Auto/ChassisSpeeds", ChassisSpeeds)
         self.autoPoseTopic = ntutil.getStructTopic("/Auto/Pose", Pose2d)
 
+        CameraServer().launch()
+
 
     def robotInit(self):
         wpilib.DataLogManager.start()
@@ -115,14 +118,33 @@ class MyRobot(wpilib.TimedRobot):
         self.drivetrain.drive(0, 0, 0)
         self.autoTrajectoryTopic.set([])
 
+    def testInit(self):
+        self.trajectory = choreo.load_swerve_trajectory("go_to_reef_test")
+
+        if self.trajectory:
+            self.autoTimer.restart()
+            self.previousAutoTime = 0
+
 
     def testPeriodic(self):
         # self.elevatorandarm.set_elevator_pid(utils.remap(self.leftStick.getRawAxis(2), (-1, 1), (3, 0)), 0, 0)
         # self.elevatorandarm.set_elevator_position(utils.remap(self.rightStick.getRawAxis(2), (-1, 1), (1, 0)))
 
-        self.hanger.set_position(utils.remap(self.leftStick.getRawAxis(2), (-1, 1), (math.pi / 2, -math.pi / 2)))
+        # self.hanger.set_position(utils.remap(self.leftStick.getRawAxis(2), (-1, 1), (math.pi / 2, -math.pi / 2)))
 
-        pass
+        currentAutoTime = self.autoTimer.get()
+
+        if self.trajectory:
+            sample = self.trajectory.sample_at(self.autoTimer.get(), utils.isRedAlliance())
+            self.noAutoSampleAlert.set(not sample)
+
+            if sample:
+                self.drivetrain.follow_choreo_trajectory(sample)
+            else:
+                # We should always have samples. If not, stop the bot.
+                pass
+        
+        self.previousAutoTime = currentAutoTime
 
 
     def autonomousInit(self) -> None:
