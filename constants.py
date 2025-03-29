@@ -97,7 +97,7 @@ kWristNudgeAmount = wpimath.units.degreesToRadians(45)
 #Arm Angle Presets
 kWristUprightAngle = wpimath.units.degreesToRadians(-5) #rad
 kWristCoralScoreAngle = wpimath.units.degreesToRadians(-30) #rad
-kWristHighCoralScoreAngle = wpimath.units.degreesToRadians(-55)
+kWristHighCoralScoreAngle = wpimath.units.degreesToRadians(-35)
 kWristAlgaeDereef = wpimath.units.degreesToRadians(-110) #rad
 kWristAlgaeGround = wpimath.units.degreesToRadians(-130) #rad
 
