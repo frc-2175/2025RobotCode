@@ -64,10 +64,10 @@ class MyRobot(wpilib.TimedRobot):
             "c4": lambda: self.elevatorandarm.go_to_coral_preset(level=4),
             "a1": lambda: self.elevatorandarm.go_to_algae_dereef_preset(False),
             "a2": lambda: self.elevatorandarm.go_to_algae_dereef_preset(True),
-            "coralmove": lambda: self.elevatorandarm.move_coral_manually(1),
-            "coralstop": lambda: self.elevatorandarm.move_coral_manually(0),
-            "algaemove": lambda: self.elevatorandarm.move_algae(1),
-            "algaestop": lambda: self.elevatorandarm.move_algae(0),
+            "coralmove": lambda: self.elevatorandarm.move_game_piece(1),
+            "coralstop": lambda: self.elevatorandarm.move_game_piece(0),
+            "algaemove": lambda: self.elevatorandarm.move_game_piece(1),
+            "algaestop": lambda: self.elevatorandarm.move_game_piece(0),
         }
 
         # Alerts
@@ -238,6 +238,7 @@ class MyRobot(wpilib.TimedRobot):
             self.drivetrain.reset_heading(utils.driverForwardAngle())
 
         gamePieceSpeed = self.gamePad.getRightTriggerAxis()-self.gamePad.getLeftTriggerAxis()
+        gamePieceSpeed = wpimath.applyDeadband(gamePieceSpeed, 0.2)
 
         if self.gamePad.getRightBumper():
             self.scoringMode = constants.kCoralMode
@@ -259,9 +260,6 @@ class MyRobot(wpilib.TimedRobot):
                 #Set Elevator to L4 Height
                 self.elevatorandarm.go_to_coral_preset(level=4)
 
-            coralSpeed = wpimath.applyDeadband(gamePieceSpeed, 0.2)
-            self.elevatorandarm.move_coral_manually(coralSpeed)
-
         elif self.scoringMode == constants.kAlgaeMode:
             if self.gamePad.getAButton():
                 self.elevatorandarm.go_to_algae_floor_preset()
@@ -270,11 +268,10 @@ class MyRobot(wpilib.TimedRobot):
             elif self.gamePad.getYButton():
                 self.elevatorandarm.go_to_algae_dereef_preset(high=True)
 
-            self.elevatorandarm.move_algae(gamePieceSpeed)
-
         else:
             ntutil.logAlert(self.scoringModeImproperValue, self.scoringMode)
 
+        self.elevatorandarm.move_game_piece(gamePieceSpeed)
         self.elevatorandarm.set_arm_nudge_amount(wpimath.applyDeadband(-self.gamePad.getRightY(), 0.1))
 
         if self.gamePad.getStartButton():

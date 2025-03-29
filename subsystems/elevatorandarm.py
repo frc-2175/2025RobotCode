@@ -175,6 +175,7 @@ class ElevatorAndArm:
         self.coralSetpointTopic = ntutil.getFloatTopic("/Intake/CoralSetpoint")
         self.intakeModeTopic = ntutil.getStringTopic("/Intake/IntakeMode")
         self.intakeStateTopic = ntutil.getStringTopic("/Intake/IntakeState")
+        self.intakeSpeedTopic = ntutil.getFloatTopic("/Intake/IntakeSpeed")
 
         self.presetWhileDutyCycleAlert = wpilib.Alert("Set coral position while holding triggers; ignored", wpilib.Alert.AlertType.kWarning)
         self.setCoralPositionWhileInAlgaeModeAlert = wpilib.Alert("Set coral position while in algae mode - this is a controls bug", wpilib.Alert.AlertType.kError)
@@ -269,6 +270,7 @@ class ElevatorAndArm:
         self.armOuterWheelSpeedTopic.set(self.armOuterWheelEncoder.getVelocity())
         self.intakeModeTopic.set(self.intakeMode)
         self.intakeStateTopic.set(self.intakeState)
+        self.intakeSpeedTopic.set(self.intakeSpeed)
 
         # Update Mechanism2d telemetry
         self.mechActual.update(elevatorHeight=self.get_elevator_position(), armAngle=self.get_wrist_position())
@@ -331,22 +333,13 @@ class ElevatorAndArm:
             self.algaeReverse = True
         self.set_arm_position(elevatorHeight, constants.kWristAlgaeDereef, constants.kAlgaeMode)
 
-    def move_coral_manually(self, speed: float):
+    def move_game_piece(self, speed: float):
         """
-        Spins the squishy wheels in opposite directions to move coral. Speeds range from
-        -1 to 1, where positive means intake -> reef. Speed will be limited by the top
-        speed in constants.py.
+        Spins the squishy wheels to move a game piece, according to the current
+        scoring mode. 1 means the "primary direction" of the game piece, -1 the
+        reverse. For coral, 1 means moving a coral from robot to intake to
+        reef. For algae, 1 means picking up algae and -1 means releasing it.
         """
-        self.intakeMode = "coral"
-        self.intakeSpeed = speed
-
-    def move_algae(self, speed: float):
-        """
-        Spins the squishy wheels in the same direction to move algae. Speeds range from
-        -1 to 1, where positive means robot -> processor. Speed will be limited by the
-        top speed in constants.py.
-        """
-        self.intakeMode = "algae"
         self.intakeSpeed = speed
 
     def get_wrist_position(self) -> float:
