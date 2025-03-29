@@ -92,6 +92,7 @@ kSquishyWheelAlgaeSpeed = 0.4
 kArmHeightInCarriage = wpimath.units.inchesToMeters(5.5)
 kArmCoralRadius = wpimath.units.inchesToMeters(16)
 kArmAlgaeRadius = wpimath.units.inchesToMeters(21.5)
+kWristNudgeAmount = wpimath.units.degreesToRadians(45)
 
 #Arm Angle Presets
 kWristUprightAngle = wpimath.units.degreesToRadians(-5) #rad

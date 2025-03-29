@@ -91,7 +91,7 @@ class MyRobot(wpilib.TimedRobot):
         self.loadChoreoTrajectories()
 
         # Final initialization
-        self.elevatorandarm.set_arm_position(constants.kElevatorL1, constants.kWristUprightAngle, constants.kCoralMode)
+        self.elevatorandarm.go_to_coral_preset(1)
 
 
     def robotPeriodic(self):
@@ -127,6 +127,7 @@ class MyRobot(wpilib.TimedRobot):
 
     def autonomousInit(self) -> None:
         self.drivetrain.set_heading_controller_to_autonomous()
+        self.elevatorandarm.set_arm_nudge_amount(0)
 
         self.trajectory = self.trajectoryChooser.getSelected()
         if self.trajectory:
@@ -229,11 +230,13 @@ class MyRobot(wpilib.TimedRobot):
                 self.elevatorandarm.go_to_algae_dereef_preset(high=False)
             elif self.gamePad.getYButton():
                 self.elevatorandarm.go_to_algae_dereef_preset(high=True)
-            
+
             self.elevatorandarm.move_algae(gamePieceSpeed)
 
         else:
             ntutil.logAlert(self.scoringModeImproperValue, self.scoringMode)
+
+        self.elevatorandarm.set_arm_nudge_amount(wpimath.applyDeadband(-self.gamePad.getRightY(), 0.1))
 
         if self.gamePad.getStartButton():
             self.hanger.trigger_solenoid()
