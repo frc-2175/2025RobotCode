@@ -14,6 +14,8 @@ from wpimath.geometry import Pose2d, Pose3d, Rotation2d, Translation2d
 from wpimath.kinematics import (ChassisSpeeds, SwerveDrive4Kinematics,
                                 SwerveModuleState)
 
+from wpilib.cameraserver import CameraServer
+
 import constants
 import ntutil
 import utils
@@ -92,6 +94,8 @@ class MyRobot(wpilib.TimedRobot):
 
         # Final initialization
         self.elevatorandarm.go_to_coral_preset(1)
+
+        CameraServer().launch()
 
 
     def robotPeriodic(self):
