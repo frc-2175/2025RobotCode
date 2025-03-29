@@ -245,7 +245,7 @@ class ElevatorAndArm:
                     self.intakeState = "positional"
                     self.armInnerWheelEncoder.setPosition(-constants.kCoralPositionWhenStoppedDetecting)
                     self.armOuterWheelEncoder.setPosition(constants.kCoralPositionWhenStoppedDetecting)
-                    self.set_coral_position(constants.kCoralPositionWhenStoppedDetecting)
+                    self.set_coral_position(wpimath.units.inchesToMeters(8)) # L1 position
                 else:
                     self.armInnerWheelController.setReference(-self.intakeSpeed * constants.kSquishyWheelCoralSpeed, rev.SparkMax.ControlType.kDutyCycle)
                     self.armOuterWheelController.setReference(self.intakeSpeed * constants.kSquishyWheelCoralSpeed, rev.SparkMax.ControlType.kDutyCycle)

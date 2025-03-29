@@ -57,10 +57,10 @@ kElevatorKV = 10.72 #V*m/s
 kElevatorKA = 0.01 #V*m^2/s^2
 
 #Elevator Presets
-kElevatorL1 = wpimath.units.inchesToMeters(27)
-kElevatorL2 = wpimath.units.inchesToMeters(31.5)
-kElevatorL3 = wpimath.units.inchesToMeters(47.5)
-kElevatorL4 = wpimath.units.inchesToMeters(72)
+kElevatorL1 = wpimath.units.inchesToMeters(28)
+kElevatorL2 = wpimath.units.inchesToMeters(32.5)
+kElevatorL3 = wpimath.units.inchesToMeters(48.5)
+kElevatorL4 = wpimath.units.inchesToMeters(73)
 
 kElevatorAlgaeGround = wpimath.units.inchesToMeters(14)
 kElevatorAlgaeLow = wpimath.units.inchesToMeters(42)
@@ -93,6 +93,7 @@ kArmHeightInCarriage = wpimath.units.inchesToMeters(5.5)
 kArmCoralRadius = wpimath.units.inchesToMeters(16)
 kArmAlgaeRadius = wpimath.units.inchesToMeters(21.5)
 kWristNudgeAmount = wpimath.units.degreesToRadians(45)
+kArmSafeToDoCoralPositionAngle = wpimath.units.degreesToRadians(-20)
 
 #Arm Angle Presets
 kWristUprightAngle = wpimath.units.degreesToRadians(-5) #rad
