@@ -12,6 +12,7 @@ from wpimath.filter import SlewRateLimiter
 from wpimath.geometry import Pose2d, Pose3d, Rotation2d, Rotation3d, Translation2d, Transform3d
 from wpimath.kinematics import (ChassisSpeeds, SwerveDrive4Kinematics,
                                 SwerveDrive4Odometry, SwerveModuleState)
+from wpimath.estimator import SwerveDrive4PoseEstimator
 
 import constants
 import ntutil
@@ -42,16 +43,18 @@ class Drivetrain:
         backRightLocation = Translation2d(-constants.kWheelDistanceFromCenter, -constants.kWheelDistanceFromCenter)
         self.kinematics = SwerveDrive4Kinematics(frontLeftLocation, frontRightLocation, backLeftLocation, backRightLocation)
 
-        self.odometry = SwerveDrive4Odometry(
+        self.odometry = SwerveDrive4PoseEstimator(
             self.kinematics,
             self.gyro.getRotation2d(),
             (
+                (
                 self.frontLeftSwerveModule.getPosition(),
                 self.frontRightSwerveModule.getPosition(),
                 self.backLeftSwerveModule.getPosition(),
                 self.backRightSwerveModule.getPosition(),
+                )
             ),
-            Pose2d(0, 0, self.gyro.getRotation2d()) # Initial pose of the robot (will be continuously adjusted by vision)
+            Pose2d(0, 0, self.gyro.getRotation2d())
         )
 
         # Choreo PID controllers
@@ -175,7 +178,7 @@ class Drivetrain:
             )
         )
 
-        self.robotPoseTopic.set(self.odometry.getPose())
+        self.robotPoseTopic.set(self.odometry.getEstimatedPosition())
 
         try:
             self.photonTagTransformsTopic.set(self.get_photon_targets())
@@ -183,7 +186,7 @@ class Drivetrain:
             if visionUpdate:
                 self.visionPose = visionUpdate.estimatedPose
                 self.visionPoseTopic.set(visionUpdate.estimatedPose)
-                # TODO: addVisionMeasurement for odometry
+                self.odometry.addVisionMeasurement(visionUpdate.estimatedPose.toPose2d(), visionUpdate.timestampSeconds)
         except:
             ntutil.log("Failed to retrieve any tags from PhotonVision")
 
@@ -192,10 +195,10 @@ class Drivetrain:
         pass
 
     def get_pose(self) -> Pose2d:
-        return self.odometry.getPose()
+        return self.odometry.getEstimatedPosition()
 
     def get_heading(self) -> Rotation2d:
-        return self.odometry.getPose().rotation()
+        return self.odometry.getEstimatedPosition().rotation()
 
     def get_heading_rate(self) -> float:
         """
