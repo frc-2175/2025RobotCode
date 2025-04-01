@@ -301,7 +301,7 @@
    {"name":"coralmove", "from":{"target":2, "targetTimestamp":5.71085, "offset":{"exp":"0 s", "val":0.0}}, "event":null},
    {"name":"c1", "from":{"target":0, "targetTimestamp":0.0, "offset":{"exp":"0 s", "val":0.0}}, "event":null},
    {"name":"coralstop", "from":{"target":3, "targetTimestamp":8.76403, "offset":{"exp":"0 s", "val":0.0}}, "event":null},
-   {"name":"a1", "from":{"target":3, "targetTimestamp":8.76403, "offset":{"exp":"0 s", "val":0.0}}, "event":null},
+   {"name":"a1", "from":{"target":2, "targetTimestamp":5.71085, "offset":{"exp":"1 s", "val":1.0}}, "event":null},
    {"name":"algaemove", "from":{"target":3, "targetTimestamp":8.76403, "offset":{"exp":"0 s", "val":0.0}}, "event":null},
    {"name":"algaestop", "from":{"target":5, "targetTimestamp":11.61123, "offset":{"exp":"0 s", "val":0.0}}, "event":null},
    {"name":"c1", "from":{"target":5, "targetTimestamp":11.61123, "offset":{"exp":"0 s", "val":0.0}}, "event":null}]
