@@ -163,9 +163,6 @@ class MyRobot(wpilib.TimedRobot):
 
         self.trajectory = self.trajectoryChooser.getSelected()
         if self.trajectory:
-            initial_pose = self.trajectory.get_initial_pose(utils.isRedAlliance())
-            if initial_pose:
-                self.drivetrain.reset_pose(initial_pose)
             self.autoTimer.restart()
             self.previousAutoTime = 0
 
