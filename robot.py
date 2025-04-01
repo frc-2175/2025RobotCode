@@ -75,7 +75,6 @@ class MyRobot(wpilib.TimedRobot):
         self.noAutoAlert = Alert("No autonomous trajectory", Alert.AlertType.kWarning)
         self.noAutoSampleAlert = Alert("No sample for autonomous trajectory; stopping bot", Alert.AlertType.kWarning)
         self.scoringModeImproperValue = Alert("Variable scoringMode improper value (expected kCoralMode or kAlgaeMode)", Alert.AlertType.kError)
-        self.redAllianceWhenTestingAlert = Alert("Do not use red alliance in testing! Controls will be inverted.", Alert.AlertType.kWarning)
 
         # Control state
         self.scoringMode = constants.kCoralMode
@@ -120,8 +119,6 @@ class MyRobot(wpilib.TimedRobot):
             self.scoringModeTopic.set("Algae")
         else:
             self.scoringModeTopic.set("???")
-        
-        self.redAllianceWhenTestingAlert.set(utils.isRedAlliance() and wpilib.DriverStation.isDSAttached() and not wpilib.DriverStation.isFMSAttached())
 
 
     def disabledInit(self):
