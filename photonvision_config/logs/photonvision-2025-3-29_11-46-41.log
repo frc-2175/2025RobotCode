@@ -1,3 +1,0 @@
-[2025-03-29 11:46:41] [General - Main] [INFO] Starting PhotonVision version v2025.3.1-rc2 on platform Mac OS
-[2025-03-29 11:46:41] [General - OsImageVersion] [WARN] Photon cannot locate base OS image version metadata at /opt/photonvision/image-version
-[2025-03-29 11:46:41] [General - Main] [ERROR] This platform is unsupported!

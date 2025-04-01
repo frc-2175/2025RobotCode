@@ -2,6 +2,7 @@ __pycache__
 simgui*.json
 networktables.json
 *.wpilog
+*.log
 .DS_Store
 
 shuffleboard.json
