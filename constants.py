@@ -104,7 +104,7 @@ kWristAlgaeGround = wpimath.units.degreesToRadians(-130) #rad
 # Arm wheel constants
 kArmWheelReduction = 5.0
 kArmWheelDiameter = wpimath.units.inchesToMeters(4)
-kCoralPositionWhenStoppedDetecting = wpimath.units.inchesToMeters(7)
+kCoralPositionWhenStoppedDetecting = wpimath.units.inchesToMeters(4.5)
 
 # Arm FF constants
 # https://www.reca.lc/arm?armMass=%7B%22s%22%3A5%2C%22u%22%3A%22lbs%22%7D&comLength=%7B%22s%22%3A5.97%2C%22u%22%3A%22in%22%7D&currentLimit=%7B%22s%22%3A38%2C%22u%22%3A%22A%22%7D&efficiency=80&endAngle=%7B%22s%22%3A90%2C%22u%22%3A%22deg%22%7D&iterationLimit=10000&motor=%7B%22quantity%22%3A1%2C%22name%22%3A%22NEO%22%7D&ratio=%7B%22magnitude%22%3A25%2C%22ratioType%22%3A%22Reduction%22%7D&startAngle=%7B%22s%22%3A-90%2C%22u%22%3A%22deg%22%7D

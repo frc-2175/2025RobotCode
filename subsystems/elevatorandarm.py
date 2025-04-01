@@ -390,7 +390,7 @@ class ElevatorAndArm:
         return armHeight - constants.kArmHeightInCarriage - constants.kElevatorBaseHeight - radius * math.cos(angle)
     
     def coral_detected(self):
-        return 1.5 < self.intakeSensor.getAverageVoltage() < 2.5
+        return 0.2 < self.intakeSensor.getAverageVoltage()
 
     def get_coral_position(self):
         return (self.armOuterWheelEncoder.getPosition() + -self.armInnerWheelEncoder.getPosition()) / 2
