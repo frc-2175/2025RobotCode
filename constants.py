@@ -34,7 +34,6 @@ kChoreoRotationI = 0
 kChoreoRotationD = 1 / wpimath.units.degreesToRadians(75)
 
 # Elevator
-kMaxElevatorSpeed = wpimath.units.inchesToMeters(9) # m/s
 kMinElevatorHeight = wpimath.units.inchesToMeters(0.1) # m
 kMaxElevatorHeight = wpimath.units.inchesToMeters((4 * 12) + 2) # m
 # Pitch diameter for the WCP 18 tooth sprocket is 1.432 inches
