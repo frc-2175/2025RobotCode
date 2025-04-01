@@ -75,6 +75,8 @@ class MyRobot(wpilib.TimedRobot):
         self.noAutoAlert = Alert("No autonomous trajectory", Alert.AlertType.kWarning)
         self.noAutoSampleAlert = Alert("No sample for autonomous trajectory; stopping bot", Alert.AlertType.kWarning)
         self.scoringModeImproperValue = Alert("Variable scoringMode improper value (expected kCoralMode or kAlgaeMode)", Alert.AlertType.kError)
+        self.tooFarAwayFromAutoStartAlert = Alert("Robot is not in the right place to begin auto! Double-check which auto you have selected.", Alert.AlertType.kWarning)
+        self.wrongWayForAutoAlert = Alert("Robot is not facing the right way to begin auto!", Alert.AlertType.kWarning)
 
         # Control state
         self.scoringMode = constants.kCoralMode
@@ -120,38 +122,23 @@ class MyRobot(wpilib.TimedRobot):
         else:
             self.scoringModeTopic.set("???")
 
+        self.updateTrajectoryTelemetry()
+
 
     def disabledInit(self):
         self.drivetrain.drive_field_relative(0, 0, 0)
-        self.autoTrajectoryTopic.set([])
+
+    def disabledPeriodic(self):
+        # Continuously update the trajectory so that the visuals in
+        # AdvantageScope get updated too.
+        self.trajectory = self.trajectoryChooser.getSelected()
+
 
     def testInit(self):
-        self.trajectory = choreo.load_swerve_trajectory("go_to_reef_test")
-
-        if self.trajectory:
-            self.autoTimer.restart()
-            self.previousAutoTime = 0
-
+        pass
 
     def testPeriodic(self):
-        # self.elevatorandarm.set_elevator_pid(utils.remap(self.leftStick.getRawAxis(2), (-1, 1), (3, 0)), 0, 0)
-        # self.elevatorandarm.set_elevator_position(utils.remap(self.rightStick.getRawAxis(2), (-1, 1), (1, 0)))
-
-        # self.hanger.set_position(utils.remap(self.leftStick.getRawAxis(2), (-1, 1), (math.pi / 2, -math.pi / 2)))
-
-        currentAutoTime = self.autoTimer.get()
-
-        if self.trajectory:
-            sample = self.trajectory.sample_at(self.autoTimer.get(), utils.isRedAlliance())
-            self.noAutoSampleAlert.set(not sample)
-
-            if sample:
-                self.drivetrain.follow_choreo_trajectory(sample)
-            else:
-                # We should always have samples. If not, stop the bot.
-                pass
-        
-        self.previousAutoTime = currentAutoTime
+        pass
 
 
     def autonomousInit(self) -> None:
@@ -162,12 +149,6 @@ class MyRobot(wpilib.TimedRobot):
         if self.trajectory:
             self.autoTimer.restart()
             self.previousAutoTime = 0
-
-            if utils.isRedAlliance():
-                self.autoTrajectoryTopic.set([s.flipped().get_pose() for s in self.trajectory.samples])
-            else:
-                self.autoTrajectoryTopic.set([s.get_pose() for s in self.trajectory.samples])
-
 
     def autonomousPeriodic(self) -> None:
         currentAutoTime = self.autoTimer.get()
@@ -199,7 +180,6 @@ class MyRobot(wpilib.TimedRobot):
 
     def teleopInit(self) -> None:
         self.drivetrain.set_heading_controller_to_teleop()
-
 
     def teleopPeriodic(self) -> None:
         # Get raw speeds from joysticks (to be converted to field/robot relative)
@@ -290,10 +270,7 @@ class MyRobot(wpilib.TimedRobot):
                 # Check the path we're trying to load actually exists before handing to Choreo
                 if os.path.exists(os.path.join(wpilib.getDeployDirectory(), "choreo", autoName + ".traj")):
                     trajectory = choreo.load_swerve_trajectory(autoName)
-                    if idx == 0:
-                        self.trajectoryChooser.setDefaultOption(autoName, trajectory)
-                    else:
-                        self.trajectoryChooser.addOption(autoName, trajectory)
+                    self.trajectoryChooser.addOption(autoName, trajectory)
 
                     for event in trajectory.events:
                         if event.event not in self.autoEvents:
@@ -304,3 +281,35 @@ class MyRobot(wpilib.TimedRobot):
                     ntutil.logAlert(self.badTrajectoryAlert, autoName)
             except ValueError as err:
                 ntutil.logAlert(self.badTrajectoryAlert, err)
+
+    def updateTrajectoryTelemetry(self):
+        # Update
+        initial_pose = None
+        if self.trajectory:
+            if utils.isRedAlliance():
+                self.autoTrajectoryTopic.set([s.flipped().get_pose() for s in self.trajectory.samples])
+            else:
+                self.autoTrajectoryTopic.set([s.get_pose() for s in self.trajectory.samples])
+
+            initial_pose = self.trajectory.get_initial_pose(utils.isRedAlliance())
+        else:
+            self.autoTrajectoryTopic.set([])
+
+        if DriverStation.isAutonomousEnabled():
+            # Don't update the auto pose in AdvantageScope; autonomousPeriodic
+            # is currently updating it.
+            pass
+        else:
+            # Update the auto pose in AdvantageScope to visualize the pose at
+            # the start of the selected trajectory.
+            self.autoPoseTopic.set(initial_pose or Pose2d())
+
+        if initial_pose and not DriverStation.isEnabled():
+            robotToAutoStart = self.drivetrain.get_pose() - initial_pose
+            self.tooFarAwayFromAutoStartAlert.set(robotToAutoStart.translation().norm() > wpimath.units.feetToMeters(2))
+
+            angleDifference = self.drivetrain.get_heading() - initial_pose.rotation()
+            self.wrongWayForAutoAlert.set(abs(angleDifference.degrees()) > 45)
+        else:
+            self.tooFarAwayFromAutoStartAlert.set(False)
+            self.wrongWayForAutoAlert.set(False)
