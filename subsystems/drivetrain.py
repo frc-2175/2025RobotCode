@@ -186,7 +186,7 @@ class Drivetrain:
             if visionUpdate:
                 self.visionPose = visionUpdate.estimatedPose
                 self.visionPoseTopic.set(visionUpdate.estimatedPose)
-                self.odometry.addVisionMeasurement(visionUpdate.estimatedPose.toPose2d(), visionUpdate.timestampSeconds, (4, 4, 8))
+                self.odometry.addVisionMeasurement(visionUpdate.estimatedPose.toPose2d(), visionUpdate.timestampSeconds, (2, 2, 5))
         except:
             ntutil.log("Failed to retrieve any tags from PhotonVision")
 

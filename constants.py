@@ -29,9 +29,9 @@ kHeadingControllerD = 0
 kChoreoTranslationP = 1 / wpimath.units.inchesToMeters(20)
 kChoreoTranslationI = 0
 kChoreoTranslationD = 1 / wpimath.units.feetToMeters(20)
-kChoreoRotationP = 1 / wpimath.units.degreesToRadians(30)
+kChoreoRotationP = 1 / wpimath.units.degreesToRadians(20)
 kChoreoRotationI = 0
-kChoreoRotationD = 1 / wpimath.units.degreesToRadians(75)
+kChoreoRotationD = 0
 
 # Elevator
 kMinElevatorHeight = wpimath.units.inchesToMeters(0.1) # m

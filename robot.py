@@ -15,8 +15,6 @@ from wpimath.kinematics import (ChassisSpeeds, SwerveDrive4Kinematics,
                                 SwerveModuleState)
 from wpilib.cameraserver import CameraServer
 
-from wpilib.cameraserver import CameraServer
-
 import constants
 import ntutil
 import utils
