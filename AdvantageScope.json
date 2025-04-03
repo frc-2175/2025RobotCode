@@ -1,10 +1,10 @@
 {
   "hubs": [
     {
-      "x": 629,
-      "y": 367,
-      "width": 1616,
-      "height": 868,
+      "x": 250,
+      "y": 125,
+      "width": 1100,
+      "height": 650,
       "state": {
         "sidebar": {
           "width": 300,
@@ -25,7 +25,17 @@
             "/Hanger/Setpoint",
             "/SwerveHeading",
             "/SwerveHeading/Goal",
-            "/SwerveStates"
+            "/SwerveStates",
+            "/SwerveStates/Actual",
+            "/SwerveStates/Actual/0",
+            "/SwerveStates/Desired",
+            "/SwerveStates/Desired/0",
+            "/photonvision",
+            "/photonvision/USB_Camera",
+            "/photonvision/USB_Camera/targetPose",
+            "/PhotonTagTransforms",
+            "/Sim",
+            "/Intake"
           ]
         },
         "tabs": {
@@ -114,6 +124,15 @@
               "controller": {
                 "sources": [
                   {
+                    "type": "ghost",
+                    "logKey": "NT:/VisionPose",
+                    "logType": "Pose3d",
+                    "visible": true,
+                    "options": {
+                      "color": "#00ffff"
+                    }
+                  },
+                  {
                     "type": "robot",
                     "logKey": "NT:/RobotPose",
                     "logType": "Pose2d",
@@ -141,6 +160,16 @@
                     }
                   },
                   {
+                    "type": "vision",
+                    "logKey": "NT:/PhotonTagTransforms",
+                    "logType": "Transform3d[]",
+                    "visible": true,
+                    "options": {
+                      "color": "#00ff00",
+                      "size": "normal"
+                    }
+                  },
+                  {
                     "type": "ghost",
                     "logKey": "NT:/Auto/Pose",
                     "logType": "Pose2d",
@@ -157,6 +186,15 @@
                     "options": {
                       "color": "#00ff00",
                       "size": "normal"
+                    }
+                  },
+                  {
+                    "type": "ghost",
+                    "logKey": "NT:/Sim/Pose",
+                    "logType": "Pose2d",
+                    "visible": true,
+                    "options": {
+                      "color": "#ffff00"
                     }
                   }
                 ],
@@ -219,6 +257,16 @@
                     }
                   },
                   {
+                    "type": "vision",
+                    "logKey": "NT:/PhotonTagTransforms",
+                    "logType": "Transform3d[]",
+                    "visible": true,
+                    "options": {
+                      "color": "#00ff00",
+                      "size": "bold"
+                    }
+                  },
+                  {
                     "type": "ghost",
                     "logKey": "NT:/Auto/Pose",
                     "logType": "Pose2d",
@@ -247,14 +295,14 @@
                 "cameraIndex": -1,
                 "orbitFov": 50,
                 "cameraPosition": [
-                  -4.139012610246112,
-                  8.17372295985498,
-                  -4.525894350246876
+                  8.387264269168497,
+                  2.653173847582599,
+                  0.720717025983092
                 ],
                 "cameraTarget": [
-                  -3.9085192331442378,
-                  -2.9417507713514124,
-                  0.3227524281128157
+                  0.8850638764648066,
+                  -1.2681870341726462,
+                  0.4294507439597645
                 ]
               },
               "controlsHeight": 200
@@ -414,11 +462,11 @@
                 "leftSources": [
                   {
                     "type": "stepped",
-                    "logKey": "NT:/Intake/Sensor",
+                    "logKey": "NT:/Intake/CoralPosition",
                     "logType": "Number",
                     "visible": true,
                     "options": {
-                      "color": "#2b66a2",
+                      "color": "#80588e",
                       "size": "normal"
                     }
                   }
@@ -449,8 +497,10 @@
                 "leftLockedRange": null,
                 "rightLockedRange": null,
                 "leftUnitConversion": {
-                  "type": null,
-                  "factor": 1
+                  "type": "length",
+                  "factor": 1,
+                  "from": "meters",
+                  "to": "inches"
                 },
                 "rightUnitConversion": {
                   "type": null,
@@ -562,5 +612,5 @@
     }
   ],
   "satellites": [],
-  "version": "4.1.2"
+  "version": "4.1.1"
 }
