@@ -6,3 +6,5 @@ networktables.json
 .DS_Store
 
 shuffleboard.json
+
+venv/

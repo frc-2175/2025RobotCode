@@ -58,7 +58,7 @@ class ElevatorAndArm:
             elevatorMotor1Config
                 .closedLoop
                     .pid(constants.kElevatorP, constants.kElevatorI, constants.kElevatorD)
-                    .outputRange(-0.8, 0.8)
+                    .outputRange(-0.4, 0.4)
                     .setFeedbackSensor(rev.ClosedLoopConfig.FeedbackSensor.kPrimaryEncoder)
                     .IZone(wpimath.units.inchesToMeters(3))
         )

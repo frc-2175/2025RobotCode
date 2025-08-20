@@ -181,11 +181,11 @@ class MyRobot(wpilib.TimedRobot):
 
     def teleopPeriodic(self) -> None:
         # Get raw speeds from joysticks (to be converted to field/robot relative)
-        joystickX = constants.kMaxSpeed * wpimath.applyDeadband(self.leftStick.getX(), 0.1)
-        joystickY = constants.kMaxSpeed * wpimath.applyDeadband(self.leftStick.getY(), 0.1)
+        joystickX = (constants.kMaxSpeed * wpimath.applyDeadband(self.leftStick.getX(), 0.1))*utils.remap(self.leftStick.getRawAxis(2), (-1, 1), (1, 0))
+        joystickY = (constants.kMaxSpeed * wpimath.applyDeadband(self.leftStick.getY(), 0.1))*utils.remap(self.leftStick.getRawAxis(2), (-1, 1), (1, 0))
 
         # Turn speed is the same regardless of field/robot relative
-        turnSpeed = wpimath.applyDeadband(-self.rightStick.getX(), 0.1)
+        turnSpeed = wpimath.applyDeadband(-self.rightStick.getX(), 0.1)*utils.remap(self.rightStick.getRawAxis(2), (-1, 1), (1, 0.2))
 
         # Precision mode
         if self.leftStick.getRawButton(1) or self.rightStick.getRawButton(1):
