@@ -1,6 +1,5 @@
 import math
 
-import choreo.trajectory
 import navx
 import wpilib
 import wpimath.units
@@ -26,10 +25,10 @@ from utils import RotationSlewRateLimiter
 class Drivetrain:
     def __init__(self):
         # Hardware
-        self.frontLeftSwerveModule = SwerveModule(25, 21, 3 * math.pi/2)
-        self.frontRightSwerveModule = SwerveModule(28, 22, 0)
-        self.backLeftSwerveModule = SwerveModule(26, 24, math.pi)
-        self.backRightSwerveModule = SwerveModule(27, 23, math.pi/2)
+        self.frontLeftSwerveModule = SwerveModule(22, 10, 3 * math.pi/2)
+        self.frontRightSwerveModule = SwerveModule(23, 17, 0)
+        self.backLeftSwerveModule = SwerveModule(14, 24, math.pi)
+        self.backRightSwerveModule = SwerveModule(9, 12, math.pi/2)
 
         self.gyro = navx.AHRS.create_spi()
 
@@ -57,23 +56,6 @@ class Drivetrain:
             Pose2d(0, 0, self.gyro.getRotation2d())
         )
 
-        # Choreo PID controllers
-        self.choreoXController = PIDController(constants.kChoreoTranslationP, constants.kChoreoTranslationI, constants.kChoreoTranslationD)
-        self.choreoYController = PIDController(constants.kChoreoTranslationP, constants.kChoreoTranslationI, constants.kChoreoTranslationD)
-        self.choreoHeadingController = PIDController(constants.kChoreoRotationP, constants.kChoreoRotationI, constants.kChoreoRotationD)
-        self.choreoHeadingController.enableContinuousInput(-math.pi, math.pi)
-
-        # PhotonVision
-        # https://docs.photonvision.org/en/latest/docs/programming/photonlib/robot-pose-estimator.html#apriltags-and-photonposeestimator
-        self.camera = PhotonCamera("front")
-
-        self.cameraPoseEst = PhotonPoseEstimator(
-            AprilTagFieldLayout.loadField(AprilTagField.k2025ReefscapeWelded),
-            PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
-            self.camera,
-            constants.kRobotToCam
-        )
-
         # Telemetry
         self.desiredSwerveStatesTopic = ntutil.getStructArrayTopic("/SwerveStates/Desired", SwerveModuleState)
         self.actualSwerveStatesTopic = ntutil.getStructArrayTopic("/SwerveStates/Actual", SwerveModuleState)
@@ -82,9 +64,6 @@ class Drivetrain:
         self.gyroTopic = ntutil.getStructTopic("/Gyro", Rotation2d)
         self.robotPoseTopic = ntutil.getStructTopic("/RobotPose", Pose2d)
         self.visionPoseTopic = ntutil.getStructTopic("/VisionPose", Pose3d)
-        self.photonTagTransformsTopic = ntutil.getStructArrayTopic("/PhotonTagTransforms", Transform3d)
-
-        self.badChoreoModeAlert = wpilib.Alert("Choreo requires SwerveHeadingMode.DISABLED", wpilib.Alert.AlertType.kError)
 
         # Control variables
         self.speedLimiter = SlewRateLimiter(constants.kSpeedSlewRate) #m/s
@@ -180,16 +159,6 @@ class Drivetrain:
 
         self.robotPoseTopic.set(self.odometry.getEstimatedPosition())
 
-        try:
-            self.photonTagTransformsTopic.set(self.get_photon_targets())
-            visionUpdate = self.cameraPoseEst.update()
-            if visionUpdate:
-                self.visionPose = visionUpdate.estimatedPose
-                self.visionPoseTopic.set(visionUpdate.estimatedPose)
-                self.odometry.addVisionMeasurement(visionUpdate.estimatedPose.toPose2d(), visionUpdate.timestampSeconds, (4, 4, 8))
-        except:
-            ntutil.log("Failed to retrieve any tags from PhotonVision")
-
     def reset_pose(self, pose: Pose2d):
         self.odometry.resetPose(pose)
         pass
@@ -245,18 +214,6 @@ class Drivetrain:
         """
         self.drive_common(ChassisSpeeds2175.fromFieldRelativeSpeeds(xSpeed, ySpeed, turnSpeed, self.get_heading()))
 
-    def follow_choreo_trajectory(self, sample: choreo.trajectory.SwerveSample):
-        pose = self.get_pose()
-
-        self.drive_field_relative(
-            sample.vx + self.choreoXController.calculate(pose.X(), sample.x),
-            sample.vy + self.choreoYController.calculate(pose.Y(), sample.y),
-            sample.omega + self.choreoHeadingController.calculate(pose.rotation().radians(), sample.heading),
-        )
-
-        self.badChoreoModeAlert.set(self.headingController.mode != SwerveHeadingMode.DISABLED)
-        self.headingController.setGoal(Rotation2d(sample.heading))
-    
     def set_heading_controller_to_teleop(self):
         self.headingController.setMode(SwerveHeadingMode.HUMAN_DRIVERS)
 
@@ -265,12 +222,3 @@ class Drivetrain:
 
     def reset_heading(self, angle: float):
         self.odometry.resetRotation(Rotation2d(angle))
-
-    def get_photon_targets(self):
-        photon_detections = self.camera.getLatestResult().targets
-        target_transforms = []
-
-        for detection in photon_detections:
-            target_transforms.append(detection.bestCameraToTarget)
-        
-        return target_transforms

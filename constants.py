@@ -10,7 +10,7 @@ kAlgaeMode = 1
 kWheelDiameter = wpimath.units.inchesToMeters(2.96) # empirically measured with calipers
 kDriveMotorReduction = 4.71 # From REV MAXSwerve docs
 kDriveMotorFreeSpeed = 5676 / 60 #94.6 rev/s
-kWheelDistanceFromCenter = wpimath.units.inchesToMeters(12.375)
+kWheelDistanceFromCenter = wpimath.units.inchesToMeters(12.375-0.5)
 
 kMaxSpeedTheoretical = math.pi * kWheelDiameter * kDriveMotorFreeSpeed / kDriveMotorReduction #4.46 m/s
 kMaxSpeed = 0.9 * kMaxSpeedTheoretical
